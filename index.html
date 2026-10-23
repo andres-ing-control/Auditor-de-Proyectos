@@ -1,937 +1,771 @@
 <!DOCTYPE html>
 <html lang="es" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auditor de Cronogramas P6 & MS Project | Andrés Pérez Riquelme</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f0f7ff',
-                            100: '#e0effe',
-                            500: '#0284c7',
-                            600: '#0369a1',
-                            700: '#075985',
-                            800: '#0c4a6e',
-                            900: '#0f172a',
-                        },
-                        accent: {
-                            cyan: '#06b6d4',
-                            emerald: '#10b981',
-                            rose: '#f43f5e',
-                            amber: '#f59e0b',
-                            violet: '#8b5cf6'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
-        
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #0b0f17;
-            color: #f1f5f9;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditor de Cronogramas DCMA 14 Puntos | P6 & MS Project</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b0f17; color: #f1f5f9; }
+  .code-font { font-family: 'JetBrains Mono', monospace; }
+  .glass-panel { background: rgba(15,23,42,.75); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,.08); }
+  .glass-card { background: rgba(30,41,59,.5); border: 1px solid rgba(255,255,255,.05); }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0f172a; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+  .print-only { display: none; }
 
-        .code-font {
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.75);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .glass-card {
-            background: rgba(30, 41, 59, 0.5);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0f172a;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #0284c7;
-        }
-
-        @media print {
-            body {
-                background: white !important;
-                color: black !important;
-            }
-            .no-print {
-                display: none !important;
-            }
-            .print-only {
-                display: block !important;
-            }
-            .glass-panel, .glass-card {
-                background: white !important;
-                border: 1px solid #cbd5e1 !important;
-                box-shadow: none !important;
-                color: black !important;
-            }
-            .text-slate-300, .text-slate-400, .text-slate-200 {
-                color: #334155 !important;
-            }
-            .text-white {
-                color: #0f172a !important;
-            }
-        }
-    </style>
+  @page { size: A4 landscape; margin: 10mm; }
+  @media print {
+    body { background: #fff !important; color: #0f172a !important; }
+    .no-print { display: none !important; }
+    .print-only { display: block !important; }
+    .glass-panel, .glass-card { background: #fff !important; border: 1px solid #cbd5e1 !important; box-shadow: none !important; backdrop-filter: none !important; }
+    .text-white, .text-slate-200, .text-slate-300 { color: #0f172a !important; }
+    .text-slate-400, .text-slate-500 { color: #475569 !important; }
+    .tab-content { display: block !important; margin-bottom: 14px; }
+    .tab-content.hidden { display: block !important; }
+    section, .glass-panel { break-inside: avoid-page; }
+    tr { break-inside: avoid; }
+    thead { display: table-header-group; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-    <!-- TOP HEADER / BRANDING -->
-    <header class="sticky top-0 z-40 glass-panel border-b border-slate-800/80 px-4 lg:px-8 py-3.5 no-print">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-            <div class="flex items-center space-x-3.5">
-                <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
-                    <i data-lucide="activity" class="w-6 h-6 text-white"></i>
-                </div>
-                <div>
-                    <div class="flex items-center space-x-2">
-                        <h1 class="text-base font-bold text-white tracking-wide">Andrés Pérez Riquelme</h1>
-                        <span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 font-medium border border-sky-500/20">Especialista en Control de Proyectos</span>
-                    </div>
-                    <p class="text-xs text-slate-400 font-medium">Auditoría de Calidad DCMA 14 Puntos • Primavera P6 & MS Project</p>
-                </div>
-            </div>
-
-            <!-- Action Controls -->
-            <div class="flex items-center space-x-3 w-full md:w-auto justify-end">
-                <button id="demoBtn" class="flex items-center space-x-2 px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition border border-slate-700">
-                    <i data-lucide="play-circle" class="w-4 h-4 text-sky-400"></i>
-                    <span>Cargar Proyecto Demo (EMP 25)</span>
-                </button>
-                <button id="printBtn" class="flex items-center space-x-2 px-3.5 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold transition shadow-lg shadow-sky-600/20">
-                    <i data-lucide="printer" class="w-4 h-4"></i>
-                    <span>Exportar / Imprimir PDF</span>
-                </button>
-            </div>
+<!-- HEADER -->
+<header class="sticky top-0 z-40 glass-panel border-b border-slate-800/80 px-4 lg:px-8 py-3.5 no-print">
+  <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="flex items-center gap-3.5">
+      <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
+        <i data-lucide="activity" class="w-6 h-6 text-white"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <h1 class="text-base font-bold text-white tracking-wide">Andrés Pérez Riquelme</h1>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 font-medium border border-sky-500/20">Especialista en Control de Proyectos</span>
         </div>
-    </header>
+        <p class="text-xs text-slate-400 font-medium">Auditoría de Calidad DCMA 14 Puntos • Primavera P6 & MS Project</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+      <button id="printBtn" disabled class="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 disabled:bg-slate-700 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs font-semibold transition shadow-lg shadow-sky-600/20">
+        <i data-lucide="printer" class="w-4 h-4"></i>
+        <span>Exportar informe PDF</span>
+      </button>
+    </div>
+  </div>
+</header>
 
-    <!-- PRINT HEADER (Only visible on print) -->
-    <div class="hidden print-only p-8 border-b border-slate-300">
-        <div class="flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-bold text-slate-900">Informe de Auditoría de Calidad de Cronograma</h1>
-                <p class="text-sm text-slate-600">Evaluador DCMA 14 Puntos • Control de Proyectos</p>
-                <p class="text-xs text-slate-500 mt-1">Especialista: <strong>Andrés Pérez Riquelme</strong> (Jefe de Planificación y Programación)</p>
-            </div>
-            <div class="text-right">
-                <p class="text-xs text-slate-500">Fecha de Informe: <span id="printDate"></span></p>
-                <span id="printProjectName" class="text-lg font-bold text-sky-700">EMP 25</span>
-            </div>
+<!-- PRINT HEADER -->
+<div class="print-only p-4 border-b border-slate-300 mb-4">
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Informe de Auditoría de Calidad de Cronograma</h1>
+      <p class="text-sm text-slate-600">Evaluación DCMA 14 Puntos • Control de Proyectos</p>
+      <p class="text-xs text-slate-500 mt-1">Especialista: <strong>Andrés Pérez Riquelme</strong></p>
+    </div>
+    <div class="text-right">
+      <p class="text-xs text-slate-500">Fecha de informe: <span id="printDate"></span></p>
+      <p class="text-xs text-slate-500">Fecha de corte: <span id="printDataDate"></span></p>
+      <span id="printProjectName" class="text-lg font-bold text-sky-700"></span>
+    </div>
+  </div>
+</div>
+
+<main class="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 space-y-6">
+
+  <!-- UPLOAD -->
+  <section class="glass-panel rounded-2xl p-6 no-print">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex-1 space-y-1">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="upload-cloud" class="w-5 h-5 text-sky-400"></i>
+          Cargar Archivo de Cronograma
+        </h2>
+        <p class="text-xs text-slate-400">
+          Soporta <strong>Primavera P6 (.XER)</strong> y <strong>Microsoft Project (.XML)</strong>. El análisis se realiza en su navegador; el archivo no se envía a ningún servidor.
+        </p>
+        <p class="text-[11px] text-slate-500">Para MS Project en formato .MPP: abra el archivo y use <em>Archivo › Guardar como › XML</em>.</p>
+      </div>
+      <div id="dropZone" class="w-full md:w-auto md:min-w-[380px] border-2 border-dashed border-slate-700 hover:border-sky-500 rounded-xl p-5 text-center cursor-pointer transition bg-slate-900/40 hover:bg-slate-800/40 group">
+        <input type="file" id="fileInput" accept=".xer,.xml" class="hidden">
+        <div class="flex items-center justify-center gap-3">
+          <div class="p-2.5 rounded-lg bg-sky-500/10 text-sky-400 group-hover:bg-sky-500 group-hover:text-white transition">
+            <i data-lucide="file-text" class="w-5 h-5"></i>
+          </div>
+          <div class="text-left">
+            <p class="text-xs font-semibold text-slate-200 group-hover:text-sky-400 transition">Haz clic o arrastra aquí tu archivo .XER o .XML</p>
+            <p class="text-[11px] text-slate-400">Primavera P6 (.xer) • MS Project (.xml)</p>
+          </div>
         </div>
+      </div>
+    </div>
+    <div id="statusMsg" class="hidden mt-4 p-3 rounded-lg text-xs border"></div>
+  </section>
+
+  <div id="emptyState" class="glass-panel rounded-2xl p-10 text-center text-slate-400 text-sm no-print">
+    Cargue un archivo de cronograma para iniciar la auditoría DCMA 14 Puntos.
+  </div>
+
+  <div id="results" class="hidden space-y-6">
+
+    <!-- KPIs -->
+    <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
+      <div class="glass-card rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Cumplimiento DCMA</span>
+        <div class="flex items-baseline gap-2 mt-2">
+          <span id="kpiDcmaScore" class="text-2xl font-extrabold text-amber-400">0%</span>
+          <span id="kpiDcmaPassed" class="text-xs text-slate-400"></span>
+        </div>
+        <div class="w-full bg-slate-800 rounded-full h-1.5 mt-3 overflow-hidden">
+          <div id="kpiDcmaBar" class="bg-amber-400 h-1.5 rounded-full" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="glass-card rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Calidad General</span>
+        <div class="mt-2"><span id="kpiQualityBadge" class="px-2.5 py-1 rounded-md font-bold text-xs border"></span></div>
+        <p id="kpiQualityDesc" class="text-[11px] text-slate-400 mt-2"></p>
+      </div>
+      <div class="glass-card rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Actividades</span>
+        <div class="flex items-baseline gap-2 mt-2">
+          <span id="kpiTotalActivities" class="text-2xl font-extrabold text-white">0</span>
+          <span class="text-xs text-slate-400">totales</span>
+        </div>
+        <p id="kpiIncompleteAct" class="text-[11px] text-slate-400 mt-2"></p>
+      </div>
+      <div class="glass-card rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Relaciones</span>
+        <div class="flex items-baseline gap-2 mt-2">
+          <span id="kpiTotalRelations" class="text-2xl font-extrabold text-slate-200">0</span>
+          <span class="text-xs text-slate-400">lógicas</span>
+        </div>
+        <p id="kpiFsRatio" class="text-[11px] text-slate-400 mt-2"></p>
+      </div>
+      <div class="glass-card rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Fecha de Corte</span>
+        <div class="mt-2"><span id="kpiDataDate" class="text-base font-bold text-sky-400 code-font">—</span></div>
+        <p id="kpiProjectName" class="text-[11px] text-slate-400 mt-2 truncate"></p>
+      </div>
+      <div class="glass-card rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Índice CPLI</span>
+        <div class="mt-2"><span id="kpiCpli" class="text-2xl font-extrabold text-slate-200">—</span></div>
+        <p class="text-[11px] text-slate-400 mt-2">Meta: ≥ 0.95</p>
+      </div>
+    </section>
+
+    <!-- DCMA TABLE -->
+    <section class="glass-panel rounded-2xl p-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-800 gap-2">
+        <div>
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <i data-lucide="check-square" class="w-5 h-5 text-sky-400"></i>
+            Evaluación DCMA 14 Puntos
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">Métricas calculadas directamente desde el archivo cargado</p>
+        </div>
+        <div class="flex gap-2 text-xs">
+          <span class="px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20">Cumple</span>
+          <span class="px-2 py-1 rounded bg-rose-500/10 text-rose-400 font-semibold border border-rose-500/20">No Cumple</span>
+          <span class="px-2 py-1 rounded bg-slate-500/10 text-slate-400 font-semibold border border-slate-500/20">N/E</span>
+        </div>
+      </div>
+      <div class="overflow-x-auto mt-4">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-900/40">
+              <th class="py-3 px-3 w-12 text-center">#</th>
+              <th class="py-3 px-3">Métrica DCMA</th>
+              <th class="py-3 px-3 text-center">Resultado</th>
+              <th class="py-3 px-3 text-center">Umbral</th>
+              <th class="py-3 px-3 text-center">Estado</th>
+              <th class="py-3 px-3">Recomendación Técnica</th>
+            </tr>
+          </thead>
+          <tbody id="dcmaTableBody" class="divide-y divide-slate-800/60 text-xs font-medium"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- CRITICAL PATH + SUMMARY -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="lg:col-span-7 glass-panel rounded-2xl p-6 space-y-4">
+        <h3 class="text-base font-bold text-white flex items-center gap-2 pb-3 border-b border-slate-800">
+          <i data-lucide="git-commit" class="w-5 h-5 text-rose-400"></i>
+          Ruta Crítica y Holguras
+        </h3>
+        <div id="cpCards" class="grid grid-cols-2 md:grid-cols-3 gap-3"></div>
+        <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-300 leading-relaxed">
+          <p class="font-semibold text-sky-400 mb-1 flex items-center gap-1.5">
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i> Diagnóstico del Especialista
+          </p>
+          <p id="cpDiagnosisText"></p>
+        </div>
+      </div>
+      <div class="lg:col-span-5 glass-panel rounded-2xl p-6 space-y-4">
+        <h3 class="text-base font-bold text-white flex items-center gap-2 pb-3 border-b border-slate-800">
+          <i data-lucide="bar-chart-3" class="w-5 h-5 text-sky-400"></i>
+          Hallazgos por Categoría
+        </h3>
+        <div id="findingBars" class="space-y-3 text-xs"></div>
+      </div>
     </div>
 
-    <!-- MAIN APP CONTAINER -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 space-y-6">
-
-        <!-- FILE UPLOAD DROPZONE SECTION -->
-        <section class="glass-panel rounded-2xl p-6 no-print relative overflow-hidden">
-            <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-sky-500/5 rounded-full blur-2xl pointer-events-none"></div>
-            
-            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
-                <div class="flex-1 space-y-1">
-                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                        <i data-lucide="upload-cloud" class="w-5 h-5 text-sky-400"></i>
-                        Cargar Archivo de Cronograma
-                    </h2>
-                    <p class="text-xs text-slate-400">
-                        Soporta archivos nativos <strong>Primavera P6 (.XER)</strong> y <strong>Microsoft Project (.XML / .MPP)</strong>. Procesamiento local seguro e instantáneo.
-                    </p>
-                </div>
-
-                <!-- Drop area -->
-                <div id="dropZone" class="w-full md:w-auto flex-1 border-2 border-dashed border-slate-700 hover:border-sky-500 rounded-xl p-5 text-center cursor-pointer transition bg-slate-900/40 hover:bg-slate-800/40 group">
-                    <input type="file" id="fileInput" accept=".xer,.xml,.mpp" class="hidden">
-                    <div class="flex items-center justify-center space-x-3">
-                        <div class="p-2.5 rounded-lg bg-sky-500/10 text-sky-400 group-hover:bg-sky-500 group-hover:text-white transition">
-                            <i data-lucide="file-text" class="w-5 h-5"></i>
-                        </div>
-                        <div class="text-left">
-                            <p class="text-xs font-semibold text-slate-200 group-hover:text-sky-400 transition">Haz clic o arrastra aquí tu archivo .XER, .XML o .MPP</p>
-                            <p class="text-[11px] text-slate-400">Formatos compatibles: Primavera P6 (.xer), MS Project (.xml, .mpp)</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- KPI SUMMARY BAR -->
-        <section class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
-            <!-- Score DCMA -->
-            <div class="glass-card rounded-xl p-4 border border-slate-800/80 flex flex-col justify-between relative overflow-hidden">
-                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Cumplimiento DCMA</span>
-                <div class="flex items-baseline space-x-2 mt-2">
-                    <span id="kpiDcmaScore" class="text-2xl font-extrabold text-amber-400">57%</span>
-                    <span id="kpiDcmaPassed" class="text-xs text-slate-400 font-medium">8/14 ok</span>
-                </div>
-                <div class="w-full bg-slate-800 rounded-full h-1.5 mt-3 overflow-hidden">
-                    <div id="kpiDcmaBar" class="bg-amber-400 h-1.5 rounded-full" style="width: 57%"></div>
-                </div>
-            </div>
-
-            <!-- Quality Rating -->
-            <div class="glass-card rounded-xl p-4 border border-slate-800/80 flex flex-col justify-between">
-                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Calidad General</span>
-                <div class="mt-2 flex items-center space-x-2">
-                    <span id="kpiQualityBadge" class="px-2.5 py-1 rounded-md bg-rose-500/10 text-rose-400 font-bold text-xs border border-rose-500/20">
-                        Baja
-                    </span>
-                </div>
-                <p id="kpiQualityDesc" class="text-[11px] text-slate-400 mt-2 truncate">Requiere ajustes en lógica y float</p>
-            </div>
-
-            <!-- Total Activities -->
-            <div class="glass-card rounded-xl p-4 border border-slate-800/80 flex flex-col justify-between">
-                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Actividades</span>
-                <div class="flex items-baseline space-x-2 mt-2">
-                    <span id="kpiTotalActivities" class="text-2xl font-extrabold text-white">112</span>
-                    <span class="text-xs text-slate-400">totales</span>
-                </div>
-                <p id="kpiIncompleteAct" class="text-[11px] text-slate-400 mt-2">39 incompletas</p>
-            </div>
-
-            <!-- Relationships -->
-            <div class="glass-card rounded-xl p-4 border border-slate-800/80 flex flex-col justify-between">
-                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Relaciones</span>
-                <div class="flex items-baseline space-x-2 mt-2">
-                    <span id="kpiTotalRelations" class="text-2xl font-extrabold text-slate-200">111</span>
-                    <span class="text-xs text-slate-400">lógicas</span>
-                </div>
-                <p id="kpiFsRatio" class="text-[11px] text-slate-400 mt-2">73.9% Tipo FS</p>
-            </div>
-
-            <!-- Data Date -->
-            <div class="glass-card rounded-xl p-4 border border-slate-800/80 flex flex-col justify-between">
-                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Fecha de Corte</span>
-                <div class="mt-2">
-                    <span id="kpiDataDate" class="text-base font-bold text-sky-400 code-font">24/06/2026</span>
-                </div>
-                <p id="kpiProjectName" class="text-[11px] text-slate-400 mt-2 truncate">Proyecto: EMP 25</p>
-            </div>
-
-            <!-- CPLI Index -->
-            <div class="glass-card rounded-xl p-4 border border-slate-800/80 flex flex-col justify-between">
-                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Índice CPLI</span>
-                <div class="flex items-baseline space-x-2 mt-2">
-                    <span id="kpiCpli" class="text-2xl font-extrabold text-rose-400">-2.12</span>
-                </div>
-                <p class="text-[11px] text-rose-400/80 mt-2">Meta: ≥ 0.95 (Ruta bajo presión)</p>
-            </div>
-        </section>
-
-        <!-- DCMA 14 POINT MATRIX TABLE -->
-        <section class="glass-panel rounded-2xl p-6">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-800 gap-2">
-                <div>
-                    <h3 class="text-base font-bold text-white flex items-center gap-2">
-                        <i data-lucide="check-square" class="w-5 h-5 text-sky-400"></i>
-                        Evaluación DCMA 14 Puntos (Estándar Internacional)
-                    </h3>
-                    <p class="text-xs text-slate-400 mt-0.5">Auditoría detallada de parámetros de calidad lógica, holguras, restricciones y ejecución</p>
-                </div>
-                <div class="flex items-center space-x-2 text-xs">
-                    <span class="inline-flex items-center px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5"></span>Cumple
-                    </span>
-                    <span class="inline-flex items-center px-2 py-1 rounded bg-rose-500/10 text-rose-400 font-semibold border border-rose-500/20">
-                        <span class="w-1.5 h-1.5 rounded-full bg-rose-400 mr-1.5"></span>No Cumple
-                    </span>
-                </div>
-            </div>
-
-            <div class="overflow-x-auto mt-4">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-900/40">
-                            <th class="py-3 px-3 w-12 text-center">#</th>
-                            <th class="py-3 px-3">Métrica DCMA</th>
-                            <th class="py-3 px-3 text-center">Resultado</th>
-                            <th class="py-3 px-3 text-center">Umbral Exigido</th>
-                            <th class="py-3 px-3 text-center">Estado</th>
-                            <th class="py-3 px-3">Recomendación Técnica de Corrección</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dcmaTableBody" class="divide-y divide-slate-800/60 text-xs font-medium">
-                        <!-- Dynamic DCMA Rows rendered via JS -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- CRITICAL PATH & S-CURVE SECTION (GRID) -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-            <!-- Critical Path Analysis -->
-            <div class="lg:col-span-6 glass-panel rounded-2xl p-6 flex flex-col justify-between space-y-4">
-                <div>
-                    <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-                        <h3 class="text-base font-bold text-white flex items-center gap-2">
-                            <i data-lucide="git-commit" class="w-5 h-5 text-rose-400"></i>
-                            Análisis de Ruta Crítica & Camino Más Largo
-                        </h3>
-                        <span id="cpBadge" class="text-xs px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 font-semibold">
-                            28 Actividades Críticas
-                        </span>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3 mt-4">
-                        <div class="p-3 rounded-xl bg-slate-900/50 border border-slate-800">
-                            <p class="text-[11px] text-slate-400">Rutas Críticas Independientes</p>
-                            <p id="cpIndependentCount" class="text-xl font-bold text-white mt-1">5 rutas</p>
-                        </div>
-                        <div class="p-3 rounded-xl bg-slate-900/50 border border-slate-800">
-                            <p class="text-[11px] text-slate-400">Coincidencia Camino Más Largo</p>
-                            <p id="cpMatchRatio" class="text-xl font-bold text-amber-400 mt-1">100%</p>
-                        </div>
-                        <div class="p-3 rounded-xl bg-slate-900/50 border border-slate-800">
-                            <p class="text-[11px] text-slate-400">Criticidad por Restricción</p>
-                            <p id="cpConstraintInduced" class="text-xl font-bold text-rose-400 mt-1">4 activs.</p>
-                        </div>
-                        <div class="p-3 rounded-xl bg-slate-900/50 border border-slate-800">
-                            <p class="text-[11px] text-slate-400">Críticas Sin Recursos</p>
-                            <p id="cpNoResource" class="text-xl font-bold text-emerald-400 mt-1">0 (0%)</p>
-                        </div>
-                    </div>
-
-                    <div class="mt-4 p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-300 leading-relaxed">
-                        <p class="font-semibold text-sky-400 mb-1 flex items-center gap-1.5">
-                            <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
-                            Diagnóstico del Especialista:
-                        </p>
-                        <p id="cpDiagnosisText">
-                            Existen 28 actividades con Float ≤ 0 (71.8% de las incompletas). 18 actividades críticas están fuera del camino más largo original y 4 de ellas sufren restricciones blandas/duras, por lo que la criticidad se encuentra distorsionada por fechas fijas.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
-                    <span class="text-slate-400">CPLI (Critical Path Length Index):</span>
-                    <span class="font-bold code-font text-rose-400">-2.12 (Plazo no realista)</span>
-                </div>
-            </div>
-
-            <!-- S-CURVE (EARLY VS LATE) INTERACTIVE CHART -->
-            <div class="lg:col-span-6 glass-panel rounded-2xl p-6 flex flex-col justify-between space-y-4">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-                    <div>
-                        <h3 class="text-base font-bold text-white flex items-center gap-2">
-                            <i data-lucide="trending-up" class="w-5 h-5 text-sky-400"></i>
-                            Curva S: Temprana vs. Tardía
-                        </h3>
-                        <p class="text-[11px] text-slate-400">Evaluación de banana curve y holgura acumulada del proyecto</p>
-                    </div>
-                    <span class="text-xs px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">
-                        Δ Máx: 14.4 pp (Cumple ≤ 20 pp)
-                    </span>
-                </div>
-
-                <!-- SVG Interactive Chart Container -->
-                <div class="relative w-full h-52 bg-slate-900/60 rounded-xl p-3 border border-slate-800/80 flex flex-col justify-end">
-                    <svg id="scurveSvg" class="w-full h-full overflow-visible" viewBox="0 0 500 180" preserveAspectRatio="none">
-                        <defs>
-                            <linearGradient id="bananaFill" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.25"/>
-                                <stop offset="100%" stop-color="#0284c7" stop-opacity="0.05"/>
-                            </linearGradient>
-                        </defs>
-                        <!-- Grid lines -->
-                        <line x1="0" y1="30" x2="500" y2="30" stroke="#334155" stroke-dasharray="3,3" stroke-width="0.8"/>
-                        <line x1="0" y1="75" x2="500" y2="75" stroke="#334155" stroke-dasharray="3,3" stroke-width="0.8"/>
-                        <line x1="0" y1="120" x2="500" y2="120" stroke="#334155" stroke-dasharray="3,3" stroke-width="0.8"/>
-
-                        <!-- Area between curves -->
-                        <polygon points="20,160 80,140 160,110 240,80 320,50 400,25 480,20 480,20 400,38 320,70 240,100 160,128 80,145 20,160" fill="url(#bananaFill)" />
-
-                        <!-- Late Curve (Amber) -->
-                        <path id="lateCurvePath" d="M20,160 Q80,140 160,110 T320,50 T480,20" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="none"/>
-
-                        <!-- Early Curve (Sky Blue) -->
-                        <path id="earlyCurvePath" d="M20,160 Q80,145 160,128 T320,70 T480,20" fill="none" stroke="#0284c7" stroke-width="2.5"/>
-
-                        <!-- Max Gap Indicator Line -->
-                        <line x1="320" y1="50" x2="320" y2="70" stroke="#f43f5e" stroke-width="2" stroke-dasharray="2,2"/>
-                        <circle cx="320" cy="50" r="4" fill="#f59e0b"/>
-                        <circle cx="320" cy="70" r="4" fill="#0284c7"/>
-                    </svg>
-
-                    <!-- Legend -->
-                    <div class="flex items-center justify-between text-[11px] text-slate-400 mt-2 px-2">
-                        <div class="flex items-center space-x-4">
-                            <span class="flex items-center"><span class="w-3 h-1 bg-sky-500 rounded mr-1.5"></span> Curva Temprana</span>
-                            <span class="flex items-center"><span class="w-3 h-1 bg-amber-500 rounded mr-1.5"></span> Curva Tardía</span>
-                        </div>
-                        <span class="text-rose-400 font-semibold">Δ Máx: 14.4 pp (86% vs 100%)</span>
-                    </div>
-                </div>
-            </div>
-
+    <!-- FINDINGS TABS -->
+    <section class="glass-panel rounded-2xl p-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-800 gap-4 no-print">
+        <div>
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <i data-lucide="layers" class="w-5 h-5 text-sky-400"></i>
+            Hallazgos Detallados
+          </h3>
+          <p class="text-xs text-slate-400">Filtre cada categoría para revisar las inconsistencias</p>
         </div>
+        <div class="flex flex-wrap gap-1.5 bg-slate-900/80 p-1 rounded-xl border border-slate-800 text-xs">
+          <button class="tab-btn px-3 py-1.5 rounded-lg font-semibold transition bg-sky-600 text-white" data-tab="tab-openends">Sin Lógica (<span id="countOpenEnds">0</span>)</button>
+          <button class="tab-btn px-3 py-1.5 rounded-lg font-semibold transition text-slate-400 hover:text-white" data-tab="tab-outofseq">Fuera de Secuencia (<span id="countOutOfSeq">0</span>)</button>
+          <button class="tab-btn px-3 py-1.5 rounded-lg font-semibold transition text-slate-400 hover:text-white" data-tab="tab-negativefloat">Float Negativo (<span id="countNegFloat">0</span>)</button>
+          <button class="tab-btn px-3 py-1.5 rounded-lg font-semibold transition text-slate-400 hover:text-white" data-tab="tab-constraints">Restricciones (<span id="countConstraints">0</span>)</button>
+          <button class="tab-btn px-3 py-1.5 rounded-lg font-semibold transition text-slate-400 hover:text-white" data-tab="tab-resources">Sin Recursos (<span id="countResources">0</span>)</button>
+        </div>
+      </div>
 
-        <!-- DETAILED CATEGORIZED TABBED AUDIT FINDINGS -->
-        <section class="glass-panel rounded-2xl p-6">
-            <div class="flex flex-col md:flex-row items-start md:items-center justify-between pb-4 border-b border-slate-800 gap-4">
-                <div>
-                    <h3 class="text-base font-bold text-white flex items-center gap-2">
-                        <i data-lucide="layers" class="w-5 h-5 text-sky-400"></i>
-                        Hallazgos Detallados del Cronograma
-                    </h3>
-                    <p class="text-xs text-slate-400">Filtra y revisa cada inconsistencia encontrada en la auditoría técnica</p>
-                </div>
+      <div class="mt-4">
+        <div id="tab-openends" class="tab-content">
+          <h4 class="print-only text-sm font-bold mb-2">Actividades sin lógica (sin predecesora o sucesora)</h4>
+          <div class="overflow-x-auto"><table class="w-full text-left text-xs">
+            <thead><tr class="border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase bg-slate-900/40">
+              <th class="py-2.5 px-3">Código</th><th class="py-2.5 px-3">Actividad</th><th class="py-2.5 px-3">Estado</th><th class="py-2.5 px-3">Inconsistencia</th></tr></thead>
+            <tbody id="openEndsTableBody" class="divide-y divide-slate-800/60"></tbody></table></div>
+        </div>
+        <div id="tab-outofseq" class="tab-content hidden">
+          <h4 class="print-only text-sm font-bold mb-2">Relaciones fuera de secuencia</h4>
+          <div class="overflow-x-auto"><table class="w-full text-left text-xs">
+            <thead><tr class="border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase bg-slate-900/40">
+              <th class="py-2.5 px-3">Relación (Pred → Suc)</th><th class="py-2.5 px-3">Tipo</th><th class="py-2.5 px-3">Sucesora</th><th class="py-2.5 px-3">Impacto</th></tr></thead>
+            <tbody id="outOfSeqTableBody" class="divide-y divide-slate-800/60"></tbody></table></div>
+        </div>
+        <div id="tab-negativefloat" class="tab-content hidden">
+          <h4 class="print-only text-sm font-bold mb-2">Actividades con holgura negativa</h4>
+          <div class="overflow-x-auto"><table class="w-full text-left text-xs">
+            <thead><tr class="border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase bg-slate-900/40">
+              <th class="py-2.5 px-3">Código</th><th class="py-2.5 px-3">Actividad</th><th class="py-2.5 px-3 text-right">Holgura Total (días)</th><th class="py-2.5 px-3">Fin Planificado</th></tr></thead>
+            <tbody id="negFloatTableBody" class="divide-y divide-slate-800/60"></tbody></table></div>
+        </div>
+        <div id="tab-constraints" class="tab-content hidden">
+          <h4 class="print-only text-sm font-bold mb-2">Actividades con restricciones</h4>
+          <div class="overflow-x-auto"><table class="w-full text-left text-xs">
+            <thead><tr class="border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase bg-slate-900/40">
+              <th class="py-2.5 px-3">Código</th><th class="py-2.5 px-3">Actividad</th><th class="py-2.5 px-3">Tipo</th><th class="py-2.5 px-3">Fecha</th></tr></thead>
+            <tbody id="constraintsTableBody" class="divide-y divide-slate-800/60"></tbody></table></div>
+        </div>
+        <div id="tab-resources" class="tab-content hidden">
+          <h4 class="print-only text-sm font-bold mb-2">Actividades pendientes sin recursos</h4>
+          <div class="overflow-x-auto"><table class="w-full text-left text-xs">
+            <thead><tr class="border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase bg-slate-900/40">
+              <th class="py-2.5 px-3">Código</th><th class="py-2.5 px-3">Actividad</th><th class="py-2.5 px-3">Observación</th></tr></thead>
+            <tbody id="resourcesTableBody" class="divide-y divide-slate-800/60"></tbody></table></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
 
-                <!-- Navigation Tabs -->
-                <div class="flex flex-wrap gap-1.5 bg-slate-900/80 p-1 rounded-xl border border-slate-800 text-xs">
-                    <button class="tab-btn active px-3 py-1.5 rounded-lg font-semibold text-white bg-sky-600 transition" data-tab="tab-openends">Actividades Abiertas (<span id="countOpenEnds">9</span>)</button>
-                    <button class="tab-btn px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-white transition" data-tab="tab-outofseq">Fuera de Secuencia (<span id="countOutOfSeq">29</span>)</button>
-                    <button class="tab-btn px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-white transition" data-tab="tab-negativefloat">Float Negativo (<span id="countNegFloat">28</span>)</button>
-                    <button class="tab-btn px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-white transition" data-tab="tab-constraints">Restricciones (<span id="countConstraints">7</span>)</button>
-                    <button class="tab-btn px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-white transition" data-tab="tab-resources">Recursos / Costos (<span id="countResources">708</span>)</button>
-                </div>
-            </div>
+<footer class="glass-panel border-t border-slate-800/80 py-4 px-6 text-center text-xs text-slate-400 no-print mt-8">
+  <p>Auditoría de Cronogramas P6 & MS Project • Desarrollado para <strong>Andrés Pérez Riquelme</strong></p>
+</footer>
 
-            <!-- TAB CONTENT PANELS -->
-            <div class="mt-4">
+<script>
+/* ==========================================================
+   CONSTANTES Y UTILIDADES
+   ========================================================== */
+const HOURS_PER_DAY = 8;          // Calendario base: 8 h/día (ajustable)
+const MSP_UNITS_PER_DAY = 4800;   // MS Project XML: décimas de minuto -> días (480 min * 10)
+const HARD_CONSTRAINTS = ['MSO', 'MFO'];
+const CSTR_LABEL = {
+  MSO: 'Inicio obligatorio (Must Start On)',
+  MFO: 'Fin obligatorio (Must Finish On)',
+  SNET: 'No comenzar antes de (SNET)',
+  SNLT: 'No comenzar después de (SNLT)',
+  FNET: 'No terminar antes de (FNET)',
+  FNLT: 'No terminar después de (FNLT)'
+};
 
-                <!-- 1. Open Ends Tab -->
-                <div id="tab-openends" class="tab-content space-y-3">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr class="border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase bg-slate-900/40">
-                                    <th class="py-2.5 px-3">Código ID</th>
-                                    <th class="py-2.5 px-3">Nombre de Actividad</th>
-                                    <th class="py-2.5 px-3">Estado</th>
-                                    <th class="py-2.5 px-3">Tipo Inconsistencia Lógica</th>
-                                </tr>
-                            </thead>
-                            <tbody id="openEndsTableBody" class="divide-y divide-slate-800/60">
-                                <!-- JS Populated -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+const toDate = s => {
+  if (!s) return null;
+  const d = new Date(String(s).trim().replace(' ', 'T'));
+  return isNaN(d) ? null : d;
+};
+const startOfDay = d => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
+const fmtDate = d => d ? d.toLocaleDateString('es-CL') : '—';
+const pct = (n, d) => d ? (n / d) * 100 : 0;
 
-                <!-- 2. Out of Sequence Tab -->
-                <div id="tab-outofseq" class="tab-content hidden space-y-3">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr class="border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase bg-slate-900/40">
-                                    <th class="py-2.5 px-3">Relación (Predecesora -> Sucesora)</th>
-                                    <th class="py-2.5 px-3">Tipo Lógica</th>
-                                    <th class="py-2.5 px-3">Sucesora Nombre</th>
-                                    <th class="py-2.5 px-3">Impacto Auditoría</th>
-                                </tr>
-                            </thead>
-                            <tbody id="outOfSeqTableBody" class="divide-y divide-slate-800/60">
-                                <!-- JS Populated -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+function businessDays(a, b) {
+  if (!a || !b) return 0;
+  const s = startOfDay(a), e = startOfDay(b);
+  if (e <= s) return 0;
+  let n = 0; const cur = new Date(s);
+  while (cur < e) { cur.setDate(cur.getDate() + 1); const w = cur.getDay(); if (w !== 0 && w !== 6) n++; }
+  return n;
+}
 
-                <!-- 3. Negative Float Tab -->
-                <div id="tab-negativefloat" class="tab-content hidden space-y-3">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr class="border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase bg-slate-900/40">
-                                    <th class="py-2.5 px-3">Código ID</th>
-                                    <th class="py-2.5 px-3">Nombre de Actividad</th>
-                                    <th class="py-2.5 px-3 text-right">Float Total (Días)</th>
-                                    <th class="py-2.5 px-3">Diagnóstico</th>
-                                </tr>
-                            </thead>
-                            <tbody id="negFloatTableBody" class="divide-y divide-slate-800/60">
-                                <!-- JS Populated -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+function showStatus(msg, type = 'info') {
+  const el = $('statusMsg');
+  const styles = {
+    info:  'bg-sky-500/10 text-sky-300 border-sky-500/20',
+    ok:    'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
+    error: 'bg-rose-500/10 text-rose-300 border-rose-500/20'
+  };
+  el.className = `mt-4 p-3 rounded-lg text-xs border ${styles[type]}`;
+  el.textContent = msg;
+}
 
-                <!-- 4. Constraints Tab -->
-                <div id="tab-constraints" class="tab-content hidden space-y-3">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr class="border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase bg-slate-900/40">
-                                    <th class="py-2.5 px-3">Código ID</th>
-                                    <th class="py-2.5 px-3">Nombre de Actividad</th>
-                                    <th class="py-2.5 px-3">Tipo Restricción</th>
-                                    <th class="py-2.5 px-3">Fecha Fijada</th>
-                                </tr>
-                            </thead>
-                            <tbody id="constraintsTableBody" class="divide-y divide-slate-800/60">
-                                <!-- JS Populated -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+/* ==========================================================
+   PARSER PRIMAVERA P6 (.XER)
+   ========================================================== */
+function parseXER(text) {
+  const tables = {};
+  let cur = null, fields = null;
+  for (const raw of text.split(/\r?\n/)) {
+    if (!raw) continue;
+    const parts = raw.split('\t');
+    const tag = parts[0];
+    if (tag === '%T') { cur = (parts[1] || '').trim(); tables[cur] = tables[cur] || []; fields = null; }
+    else if (tag === '%F') { fields = parts.slice(1).map(s => s.trim()); }
+    else if (tag === '%R' && cur && fields) {
+      const row = {};
+      fields.forEach((f, i) => row[f] = parts[i + 1] ?? '');
+      tables[cur].push(row);
+    }
+  }
+  if (!tables.TASK || !tables.TASK.length) throw new Error('El archivo XER no contiene la tabla TASK con actividades.');
 
-                <!-- 5. Resources Tab -->
-                <div id="tab-resources" class="tab-content hidden space-y-3">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr class="border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase bg-slate-900/40">
-                                    <th class="py-2.5 px-3">Código ID</th>
-                                    <th class="py-2.5 px-3">Actividad</th>
-                                    <th class="py-2.5 px-3">Observación de Recurso/Costo</th>
-                                </tr>
-                            </thead>
-                            <tbody id="resourcesTableBody" class="divide-y divide-slate-800/60">
-                                <!-- JS Populated -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+  const proj = (tables.PROJECT || [])[0] || {};
+  const dataDate = toDate(proj.last_recalc_date) || new Date();
 
-            </div>
-        </section>
+  const rsrcCount = {};
+  (tables.TASKRSRC || []).forEach(r => { rsrcCount[r.task_id] = (rsrcCount[r.task_id] || 0) + 1; });
 
-    </main>
+  const normCstrXER = code => {
+    const c = (code || '').replace('CS_', '');
+    if (c === 'MSO' || c === 'MSOB') return 'MSO';
+    if (c === 'MEO' || c === 'MEOB' || c === 'MFO') return 'MFO';
+    if (['SNET','SNLT','FNET','FNLT'].includes(c)) return c;
+    return null;
+  };
 
-    <!-- FOOTER / CREDITS -->
-    <footer class="glass-panel border-t border-slate-800/80 py-4 px-6 text-center text-xs text-slate-400 no-print mt-8">
-        <p>Plataforma de Auditoría de Cronogramas P6 & MS Project • Diseñado para <strong>Andrés Pérez Riquelme</strong></p>
-    </footer>
+  const tasks = tables.TASK.map(r => {
+    const status = r.status_code || '';
+    const type = (r.task_type || '');
+    const completed = status === 'TK_Complete';
+    const aStart = toDate(r.act_start_date);
+    const aFinish = toDate(r.act_end_date);
+    const started = completed || status === 'TK_Active' || !!aStart;
+    return {
+      key: String(r.task_id),
+      id: r.task_code || r.task_id,
+      name: r.task_name || '',
+      type: /Mile/.test(type) ? 'milestone' : (type === 'TT_LOE' ? 'loe' : 'task'),
+      completed, started,
+      pct: num(r.phys_complete_pct),
+      durDays: num(r.target_drtn_hr_cnt) / HOURS_PER_DAY,
+      tf: r.total_float_hr_cnt !== '' ? num(r.total_float_hr_cnt) / HOURS_PER_DAY : null,
+      start: toDate(r.early_start_date) || toDate(r.target_start_date),
+      finish: toDate(r.early_end_date) || toDate(r.target_end_date),
+      bFinish: toDate(r.target_end_date),
+      aStart, aFinish,
+      cstr: normCstrXER(r.cstr_type),
+      cstrDate: toDate(r.cstr_date),
+      resources: rsrcCount[r.task_id] || 0
+    };
+  });
 
-    <!-- JAVASCRIPT APP ENGINE -->
-    <script>
-        // Sample Audit Data based on PDF "EMP 25" Report
-        const demoProjectData = {
-            projectName: "EMP 25",
-            dataDate: "2026-06-24",
-            totalActivities: 112,
-            incompleteActivities: 39,
-            totalRelations: 111,
-            dcmaScore: 57,
-            passedMetricsCount: 8,
-            qualityLevel: "Baja",
-            cpli: -2.12,
-            bei: 0.96,
-            criticalCount: 28,
-            dcmaMetrics: [
-                { id: 1, name: "Lógica (Sin predecesora o sucesora)", result: "9 / 39 (23.1%)", threshold: "≤ 5%", passed: false, rec: "Vincular todas las actividades con predecesora y sucesora; solo el inicio y fin del proyecto pueden quedar abiertos." },
-                { id: 2, name: "Adelantos (Lags negativos)", result: "0 / 111 (0%)", threshold: "0%", passed: true, rec: "Cumple perfectamente. No existen adelantos lógicos." },
-                { id: 3, name: "Retrasos (Lags positivos)", result: "0 / 111 (0%)", threshold: "≤ 5%", passed: true, rec: "Cumple con el umbral. Lags positivos controlados." },
-                { id: 4, name: "Tipos de relación (Prevalencia FS)", result: "82 / 111 (73.9%)", threshold: "≥ 90% FS", passed: false, rec: "Aumentar el uso de relaciones FS; justificar técnicamente las relaciones SS/FF/SF." },
-                { id: 5, name: "Restricciones Duras", result: "0 / 39 (0%)", threshold: "0%", passed: true, rec: "Cumple. No existen restricciones inflexibles (Must Finish By)." },
-                { id: 6, name: "Float Alto (> 44 días hábiles)", result: "0 / 39 (0%)", threshold: "≤ 5%", passed: true, rec: "Sin holguras excesivas detectadas." },
-                { id: 7, name: "Float Negativo (Holgura < 0)", result: "28 / 39 (71.8%)", threshold: "0%", passed: false, rec: "Resolver el float negativo: acelerar actividades, paralelizar o renegociar fechas de restricción." },
-                { id: 8, name: "Duración Alta (> 45 días)", result: "0 / 39 (0%)", threshold: "≤ 5%", passed: true, rec: "Duraciones operativas bien dimensionadas." },
-                { id: 9, name: "Fechas Inválidas / Incoherentes", result: "1 / 112 (0.9%)", threshold: "0%", passed: false, rec: "Actualizar el cronograma con la fecha de corte correcta y corregir fechas reales en el futuro." },
-                { id: 10, name: "Asignación de Recursos", result: "0 / 33 (0%)", threshold: "0% sin recursos", passed: true, rec: "Todas las actividades operativas tienen asignación de recursos." },
-                { id: 11, name: "Tareas Perdidas (vs. Línea Base)", result: "24 / 71 (33.8%)", threshold: "≤ 5%", passed: false, rec: "Analizar causas de atrasos y presentar un plan de recuperación formal." },
-                { id: 12, name: "Prueba de Ruta Crítica", result: "Ruta Continua", threshold: "Continua", passed: true, rec: "Ruta crítica lógica y continua en el modelo." },
-                { id: 13, name: "CPLI (Índice Longitud Ruta Crítica)", result: "-2.12", threshold: "≥ 0.95", passed: false, rec: "Un CPLI negativo indica un plazo no realista; reestructurar la secuencia en la ruta crítica." },
-                { id: 14, name: "BEI (Índice Ejecución Línea Base)", result: "0.96", threshold: "≥ 0.95", passed: true, rec: "Cumple. Ritmo de avance alineado con la planificación." }
-            ],
-            openEnds: [
-                { id: "A1210", name: "Traslado de Módulos y Torretas 1° 600m", status: "No iniciada", issue: "Sin sucesora (Fin abierto)" },
-                { id: "A1230", name: "Traslado de Módulos y Torretas 2° 600m", status: "No iniciada", issue: "Sin sucesora (Fin abierto)" },
-                { id: "A1260", name: "Liberación de Prefabricados Maestranza 2° 600mt", status: "No iniciada", issue: "Sin sucesora (Fin abierto)" },
-                { id: "A1620", name: "Instalación de Escaleras", status: "No iniciada", issue: "Sin sucesora (Fin abierto)" },
-                { id: "A1690", name: "Instalación de Escaleras", status: "No iniciada", issue: "Sin sucesora (Fin abierto)" },
-                { id: "A1760", name: "Instalación de Escaleras", status: "No iniciada", issue: "Sin sucesora (Fin abierto)" },
-                { id: "A1910", name: "Subida de Spigots aguas arriba", status: "No iniciada", issue: "Sin sucesora (Fin abierto)" },
-                { id: "A1950", name: "Subida de Spigots aguas arriba", status: "No iniciada", issue: "Sin sucesora (Fin abierto)" },
-                { id: "A1990", name: "Subida de Spigots aguas arriba", status: "No iniciada", issue: "Sin sucesora (Fin abierto)" }
-            ],
-            outOfSeq: [
-                { rel: "A1270 -> A1280", type: "FS", successor: "Perforaciones Cancha", impact: "Ejecución fuera de secuencia lógica" },
-                { rel: "A1280 -> A1290", type: "FS", successor: "Instalación de Torretas", impact: "Sucesora en progreso antes del fin de predecesora" },
-                { rel: "A1300 -> A1310", type: "FS", successor: "Instalación de Plataformas", impact: "Avance adelantado reportado" },
-                { rel: "A1310 -> A1320", type: "FS", successor: "Tejido de crucetas y barandas", impact: "Desfase en la fecha de corte" },
-                { rel: "A1350 -> A1360", type: "FS", successor: "Subida de Spigots aguas abajo", impact: "Lógica fragmentada" },
-                { rel: "A1020 -> A1030", type: "SF", successor: "Validación por MLP", impact: "Uso prohibido de Start-to-Finish" }
-            ],
-            negFloat: [
-                { id: "A1110", name: "Recepción Orden de Compra N°2", float: -123.8, desc: "Atraso crítico en abastecimiento" },
-                { id: "A1210", name: "Traslado de Módulos y Torretas 1° 600m", float: -77.0, desc: "Ruta crítica secundaria bajo tensión" },
-                { id: "A1230", name: "Traslado de Módulos y Torretas 2° 600m", float: -46.8, desc: "Afectado por restricción de fecha" },
-                { id: "A1260", name: "Liberación de Prefabricados 2° 600mt", float: -46.8, desc: "Ruta crítica técnica" },
-                { id: "A1560", name: "Instalación de Niveletas", float: -16.9, desc: "En el camino más largo" },
-                { id: "A1570", name: "Perforaciones Cancha", float: -16.9, desc: "En el camino más largo" },
-                { id: "A1580", name: "Instalación de Torretas", float: -16.9, desc: "En el camino más largo" },
-                { id: "A1590", name: "Instalación de Pasillos", float: -16.9, desc: "En el camino más largo" }
-            ],
-            constraints: [
-                { id: "A1110", name: "Recepción Orden de Compra N°2", type: "Blanda (Inicia el)", date: "2026-02-09" },
-                { id: "A1210", name: "Traslado de Módulos y Torretas 1° 600m", type: "Blanda (Inicia el)", date: "2026-04-01" },
-                { id: "A1230", name: "Traslado de Módulos y Torretas 2° 600m", type: "Blanda (Inicia el)", date: "2026-05-04" },
-                { id: "A1260", name: "Liberación de Prefabricados 2° 600mt", type: "Blanda (Inicia el)", date: "2026-05-04" },
-                { id: "A1680", name: "Tejido de crucetas y barandas", type: "Blanda (Inicia a partir de)", date: "2026-06-19" },
-                { id: "A2090", name: "Cancha Quebrada", type: "Blanda (Inicia a partir de)", date: "2026-07-08" },
-                { id: "A2110", name: "Cancha Peumo", type: "Blanda (Inicia el)", date: "2026-06-30" }
-            ],
-            resources: [
-                { id: "A1270", name: "IIIFF + Marcaje de Niveletas", detail: "Unidades asignadas con costo $0 (Falta cargar tarifa horaria)" },
-                { id: "A1290", name: "Instalación de Torretas", detail: "Sin tarifa de costo asignada en la mano de obra" },
-                { id: "A1280", name: "Perforaciones Cancha", detail: "Recursos de equipo sin costo unitario" },
-                { id: "A1300", name: "Instalación de Pasillos", detail: "Costo nulo en recurso cuadrilla carpintería" }
-            ]
-        };
+  const relMap = { PR_FS: 'FS', PR_SS: 'SS', PR_FF: 'FF', PR_SF: 'SF' };
+  const rels = (tables.TASKPRED || []).map(r => ({
+    pred: String(r.pred_task_id),
+    succ: String(r.task_id),
+    type: relMap[r.pred_type] || 'FS',
+    lag: num(r.lag_hr_cnt) / HOURS_PER_DAY
+  }));
 
-        // State & DOM Initialization
-        let currentProject = { ...demoProjectData };
+  return { projectName: proj.proj_short_name || proj.proj_id || 'Proyecto P6', dataDate, tasks, rels, source: 'Primavera P6 (XER)' };
+}
 
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-            document.getElementById('printDate').innerText = new Date().toLocaleDateString('es-CL');
-            
-            // Render initial data
-            renderDashboard(currentProject);
+/* ==========================================================
+   PARSER MS PROJECT (.XML)
+   ========================================================== */
+function parseMSPDuration(s) {
+  if (!s) return 0;
+  const m = /P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?)?/.exec(s);
+  if (!m) return 0;
+  return num(m[1]) + num(m[2]) / HOURS_PER_DAY + num(m[3]) / (HOURS_PER_DAY * 60);
+}
 
-            // Tab Switching Handler
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const targetTab = btn.getAttribute('data-tab');
-                    
-                    document.querySelectorAll('.tab-btn').forEach(b => {
-                        b.classList.remove('active', 'bg-sky-600', 'text-white');
-                        b.classList.add('text-slate-400');
-                    });
-                    btn.classList.add('active', 'bg-sky-600', 'text-white');
-                    btn.classList.remove('text-slate-400');
+function parseMSPXML(text) {
+  const doc = new DOMParser().parseFromString(text, 'application/xml');
+  if (doc.getElementsByTagName('parsererror').length) throw new Error('El XML no es válido.');
+  const root = doc.documentElement;
+  if (root.localName !== 'Project') throw new Error('El XML no corresponde a un proyecto de MS Project.');
 
-                    document.querySelectorAll('.tab-content').forEach(content => {
-                        content.classList.add('hidden');
-                    });
-                    document.getElementById(targetTab).classList.remove('hidden');
-                });
-            });
+  const child = (el, n) => { for (const c of el.children) if (c.localName === n) return c; return null; };
+  const ch = (el, n) => { const c = child(el, n); return c ? c.textContent.trim() : null; };
 
-            // Print button handler
-            document.getElementById('printBtn').addEventListener('click', () => {
-                window.print();
-            });
+  const dataDate = toDate(ch(root, 'StatusDate')) || toDate(ch(root, 'CurrentDate')) || new Date();
+  const projectName = ch(root, 'Name') || ch(root, 'Title') || 'Proyecto MS Project';
 
-            // Demo data loader
-            document.getElementById('demoBtn').addEventListener('click', () => {
-                currentProject = { ...demoProjectData };
-                renderDashboard(currentProject);
-            });
+  const rsrcCount = {};
+  root.getElementsByTagName('Assignment').length && Array.from(root.getElementsByTagName('Assignment')).forEach(a => {
+    const t = ch(a, 'TaskUID'), r = ch(a, 'ResourceUID');
+    if (t && r && r !== '-65535' && r !== '0') rsrcCount[t] = (rsrcCount[t] || 0) + 1;
+  });
 
-            // Drag and drop / File upload logic
-            const dropZone = document.getElementById('dropZone');
-            const fileInput = document.getElementById('fileInput');
+  const cstrMap = { 2: 'MSO', 3: 'MFO', 4: 'SNET', 5: 'SNLT', 6: 'FNET', 7: 'FNLT' };
+  const tasksNode = child(root, 'Tasks');
+  const taskEls = tasksNode ? Array.from(tasksNode.children).filter(e => e.localName === 'Task') : [];
 
-            dropZone.addEventListener('click', () => fileInput.click());
+  const tasks = [], rels = [];
+  taskEls.forEach(t => {
+    const uid = ch(t, 'UID');
+    if (!uid || uid === '0') return;                 // Tarea resumen del proyecto
+    if (ch(t, 'Summary') === '1') return;            // Tareas resumen (no se auditan)
+    if (ch(t, 'Active') === '0') return;
 
-            dropZone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                dropZone.classList.add('border-sky-400', 'bg-sky-500/10');
-            });
+    const pct = num(ch(t, 'PercentComplete'));
+    const aFinish = toDate(ch(t, 'ActualFinish'));
+    const aStart = toDate(ch(t, 'ActualStart'));
+    const completed = pct >= 100 || !!aFinish;
+    const started = completed || !!aStart || pct > 0;
 
-            dropZone.addEventListener('dragleave', () => {
-                dropZone.classList.remove('border-sky-400', 'bg-sky-500/10');
-            });
+    const baseline = Array.from(t.children).find(c => c.localName === 'Baseline' && ch(c, 'Number') === '0');
+    const bFinish = baseline ? toDate(ch(baseline, 'Finish')) : null;
 
-            dropZone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                dropZone.classList.remove('border-sky-400', 'bg-sky-500/10');
-                if (e.dataTransfer.files.length > 0) {
-                    processUploadedFile(e.dataTransfer.files[0]);
-                }
-            });
+    const tsl = ch(t, 'TotalSlack');
+    const cType = Number(ch(t, 'ConstraintType'));
 
-            fileInput.addEventListener('change', (e) => {
-                if (e.target.files.length > 0) {
-                    processUploadedFile(e.target.files[0]);
-                }
-            });
-        });
+    tasks.push({
+      key: uid,
+      id: ch(t, 'ID') || uid,
+      name: ch(t, 'Name') || '',
+      type: ch(t, 'Milestone') === '1' ? 'milestone' : 'task',
+      completed, started, pct,
+      durDays: parseMSPDuration(ch(t, 'Duration')),
+      tf: tsl !== null ? num(tsl) / MSP_UNITS_PER_DAY : null,
+      start: toDate(ch(t, 'Start')),
+      finish: toDate(ch(t, 'Finish')),
+      bFinish, aStart, aFinish,
+      cstr: cstrMap[cType] || null,
+      cstrDate: toDate(ch(t, 'ConstraintDate')),
+      resources: rsrcCount[uid] || 0
+    });
 
-        // Main Dashboard Render function
-        function renderDashboard(data) {
-            // Header & KPIs
-            document.getElementById('printProjectName').innerText = data.projectName;
-            document.getElementById('kpiProjectName').innerText = `Proyecto: ${data.projectName}`;
-            document.getElementById('kpiDataDate').innerText = data.dataDate;
-            document.getElementById('kpiTotalActivities').innerText = data.totalActivities;
-            document.getElementById('kpiIncompleteAct').innerText = `${data.incompleteActivities} incompletas`;
-            document.getElementById('kpiTotalRelations').innerText = data.totalRelations;
-            document.getElementById('kpiDcmaScore').innerText = `${data.dcmaScore}%`;
-            document.getElementById('kpiDcmaPassed').innerText = `${data.passedMetricsCount}/14 ok`;
-            document.getElementById('kpiDcmaBar').style.width = `${data.dcmaScore}%`;
-            document.getElementById('kpiCpli').innerText = data.cpli;
+    Array.from(t.children).filter(c => c.localName === 'PredecessorLink').forEach(l => {
+      const p = ch(l, 'PredecessorUID');
+      if (!p) return;
+      rels.push({
+        pred: p,
+        succ: uid,
+        type: ['FF', 'FS', 'SF', 'SS'][Number(ch(l, 'Type'))] || 'FS',
+        lag: num(ch(l, 'LinkLag')) / MSP_UNITS_PER_DAY
+      });
+    });
+  });
 
-            // Quality Badge
-            const badge = document.getElementById('kpiQualityBadge');
-            badge.innerText = data.qualityLevel;
-            if (data.qualityLevel === 'Alta') {
-                badge.className = 'px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 font-bold text-xs border border-emerald-500/20';
-            } else if (data.qualityLevel === 'Media') {
-                badge.className = 'px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-400 font-bold text-xs border border-amber-500/20';
-            } else {
-                badge.className = 'px-2.5 py-1 rounded-md bg-rose-500/10 text-rose-400 font-bold text-xs border border-rose-500/20';
-            }
+  return { projectName, dataDate, tasks, rels, source: 'MS Project (XML)' };
+}
 
-            // DCMA Table Body
-            const dcmaBody = document.getElementById('dcmaTableBody');
-            dcmaBody.innerHTML = '';
-            data.dcmaMetrics.forEach(m => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-800/40 transition';
-                tr.innerHTML = `
-                    <td class="py-3 px-3 text-center code-font text-slate-400 font-bold">${m.id}</td>
-                    <td class="py-3 px-3 font-semibold text-slate-200">${m.name}</td>
-                    <td class="py-3 px-3 text-center code-font font-bold ${m.passed ? 'text-emerald-400' : 'text-rose-400'}">${m.result}</td>
-                    <td class="py-3 px-3 text-center text-slate-400 code-font">${m.threshold}</td>
-                    <td class="py-3 px-3 text-center">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold ${m.passed ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}">
-                            ${m.passed ? 'Cumple' : 'No Cumple'}
-                        </span>
-                    </td>
-                    <td class="py-3 px-3 text-slate-300 text-[11px] leading-relaxed">${m.rec}</td>
-                `;
-                dcmaBody.appendChild(tr);
-            });
+/* ==========================================================
+   MOTOR DE ANÁLISIS DCMA 14 PUNTOS
+   ========================================================== */
+function analyze(p) {
+  const dd = startOfDay(p.dataDate);
+  const map = new Map(p.tasks.map(t => [t.key, t]));
+  const R = p.rels.filter(r => map.has(r.pred) && map.has(r.succ));
+  const T = p.tasks.filter(t => t.type !== 'loe');
+  const inc = T.filter(t => !t.completed);
+  const hasPred = new Set(R.map(r => r.succ));
+  const hasSucc = new Set(R.map(r => r.pred));
+  const work = inc.filter(t => t.type === 'task');
 
-            // Render Tabs content
-            renderTabs(data);
-        }
+  const noLogic = inc.filter(t => !hasPred.has(t.key) || !hasSucc.has(t.key));
+  const leads = R.filter(r => r.lag < 0);
+  const lags = R.filter(r => r.lag > 0);
+  const fs = R.filter(r => r.type === 'FS');
+  const hard = inc.filter(t => HARD_CONSTRAINTS.includes(t.cstr));
+  const highFloat = inc.filter(t => t.tf !== null && t.tf > 44);
+  const negFloat = inc.filter(t => t.tf !== null && t.tf < 0);
+  const longDur = inc.filter(t => t.type === 'task' && t.durDays > 44);
+  const invalid = T.filter(t =>
+    (!t.completed && !t.started && t.start && startOfDay(t.start) < dd) ||
+    (t.aStart && startOfDay(t.aStart) > dd) ||
+    (t.aFinish && startOfDay(t.aFinish) > dd));
+  const noRes = work.filter(t => t.resources === 0);
+  const shouldDone = T.filter(t => t.bFinish && startOfDay(t.bFinish) < dd);
+  const missed = shouldDone.filter(t => !t.completed);
 
-        // Render Tabs Function
-        function renderTabs(data) {
-            // Open Ends
-            document.getElementById('countOpenEnds').innerText = data.openEnds.length;
-            const openEndsBody = document.getElementById('openEndsTableBody');
-            openEndsBody.innerHTML = data.openEnds.map(item => `
-                <tr class="hover:bg-slate-800/40">
-                    <td class="py-2.5 px-3 code-font text-sky-400 font-bold">${item.id}</td>
-                    <td class="py-2.5 px-3 text-slate-200">${item.name}</td>
-                    <td class="py-2.5 px-3 text-slate-400">${item.status}</td>
-                    <td class="py-2.5 px-3 text-rose-400 font-medium">${item.issue}</td>
-                </tr>
-            `).join('');
+  // Ruta crítica (aproximación): tareas críticas y cabezas de cadena crítica
+  const critical = inc.filter(t => t.tf !== null && t.tf <= 0);
+  const critKeys = new Set(critical.map(t => t.key));
+  const critHeads = critical.filter(t => !R.some(r => r.succ === t.key && critKeys.has(r.pred)));
 
-            // Out of Sequence
-            document.getElementById('countOutOfSeq').innerText = data.outOfSeq.length;
-            const outOfSeqBody = document.getElementById('outOfSeqTableBody');
-            outOfSeqBody.innerHTML = data.outOfSeq.map(item => `
-                <tr class="hover:bg-slate-800/40">
-                    <td class="py-2.5 px-3 code-font text-amber-400 font-semibold">${item.rel}</td>
-                    <td class="py-2.5 px-3 font-bold text-slate-300">${item.type}</td>
-                    <td class="py-2.5 px-3 text-slate-200">${item.successor}</td>
-                    <td class="py-2.5 px-3 text-rose-400">${item.impact}</td>
-                </tr>
-            `).join('');
+  // CPLI
+  const finishes = inc.map(t => t.finish).filter(Boolean);
+  const projFinish = finishes.length ? new Date(Math.max(...finishes.map(d => d.getTime()))) : null;
+  const cpl = projFinish ? businessDays(dd, projFinish) : 0;
+  const endTasks = inc.filter(t => !hasSucc.has(t.key) && t.tf !== null);
+  const tfEnd = endTasks.length ? Math.min(...endTasks.map(t => t.tf)) : null;
+  const cpli = (cpl > 0 && tfEnd !== null) ? (cpl + tfEnd) / cpl : null;
 
-            // Negative Float
-            document.getElementById('countNegFloat').innerText = data.negFloat.length;
-            const negFloatBody = document.getElementById('negFloatTableBody');
-            negFloatBody.innerHTML = data.negFloat.map(item => `
-                <tr class="hover:bg-slate-800/40">
-                    <td class="py-2.5 px-3 code-font text-sky-400 font-bold">${item.id}</td>
-                    <td class="py-2.5 px-3 text-slate-200">${item.name}</td>
-                    <td class="py-2.5 px-3 text-right code-font font-bold text-rose-400">${item.float} d</td>
-                    <td class="py-2.5 px-3 text-slate-400">${item.desc}</td>
-                </tr>
-            `).join('');
+  // BEI
+  const planned = T.filter(t => t.bFinish && startOfDay(t.bFinish) <= dd);
+  const plannedDone = planned.filter(t => t.completed);
+  const bei = planned.length ? plannedDone.length / planned.length : null;
 
-            // Constraints
-            document.getElementById('countConstraints').innerText = data.constraints.length;
-            const constraintsBody = document.getElementById('constraintsTableBody');
-            constraintsBody.innerHTML = data.constraints.map(item => `
-                <tr class="hover:bg-slate-800/40">
-                    <td class="py-2.5 px-3 code-font text-sky-400 font-bold">${item.id}</td>
-                    <td class="py-2.5 px-3 text-slate-200">${item.name}</td>
-                    <td class="py-2.5 px-3 text-amber-400 font-medium">${item.type}</td>
-                    <td class="py-2.5 px-3 code-font text-slate-300">${item.date}</td>
-                </tr>
-            `).join('');
+  const totalRel = R.length;
+  const fsPct = pct(fs.length, totalRel);
+  const lim = (n, d, max) => pct(n, d) <= max;
 
-            // Resources
-            document.getElementById('countResources').innerText = data.resources.length;
-            const resourcesBody = document.getElementById('resourcesTableBody');
-            resourcesBody.innerHTML = data.resources.map(item => `
-                <tr class="hover:bg-slate-800/40">
-                    <td class="py-2.5 px-3 code-font text-sky-400 font-bold">${item.id}</td>
-                    <td class="py-2.5 px-3 text-slate-200">${item.name}</td>
-                    <td class="py-2.5 px-3 text-rose-400">${item.detail}</td>
-                </tr>
-            `).join('');
-        }
+  const metrics = [
+    { id: 1, name: 'Lógica (sin predecesora o sucesora)', result: `${noLogic.length} / ${inc.length} (${pct(noLogic.length, inc.length).toFixed(1)}%)`, threshold: '≤ 5%', passed: lim(noLogic.length, inc.length, 5), rec: 'Vincular todas las actividades abiertas. Solo el inicio y fin del proyecto pueden quedar sin lógica.' },
+    { id: 2, name: 'Adelantos (lags negativos)', result: `${leads.length} / ${totalRel} (${pct(leads.length, totalRel).toFixed(1)}%)`, threshold: '0%', passed: leads.length === 0, rec: 'Eliminar lags negativos; reemplazarlos por una lógica secuencial real.' },
+    { id: 3, name: 'Retrasos (lags positivos)', result: `${lags.length} / ${totalRel} (${pct(lags.length, totalRel).toFixed(1)}%)`, threshold: '≤ 5%', passed: lim(lags.length, totalRel, 5), rec: 'Reducir los lags positivos convirtiéndolos en actividades explícitas de espera.' },
+    { id: 4, name: 'Relaciones tipo FS', result: `${fs.length} / ${totalRel} (${fsPct.toFixed(1)}%)`, threshold: '≥ 90% FS', passed: fsPct >= 90, rec: 'Aumentar relaciones FS; justificar técnicamente las SS/FF/SF.' },
+    { id: 5, name: 'Restricciones duras', result: `${hard.length} / ${inc.length} (${pct(hard.length, inc.length).toFixed(1)}%)`, threshold: '≤ 5%', passed: lim(hard.length, inc.length, 5), rec: 'Reemplazar Inicio/Fin obligatorio por restricciones flexibles o lógica.' },
+    { id: 6, name: 'Holgura alta (> 44 días)', result: `${highFloat.length} / ${inc.length} (${pct(highFloat.length, inc.length).toFixed(1)}%)`, threshold: '≤ 5%', passed: lim(highFloat.length, inc.length, 5), rec: 'Revisar actividades con holgura excesiva; posible falta de lógica o de sucesoras.' },
+    { id: 7, name: 'Holgura negativa', result: `${negFloat.length} / ${inc.length} (${pct(negFloat.length, inc.length).toFixed(1)}%)`, threshold: '0%', passed: negFloat.length === 0, rec: 'Recuperar el plan: acelerar, paralelizar o renegociar las restricciones que generan la holgura negativa.' },
+    { id: 8, name: 'Duración alta (> 44 días)', result: `${longDur.length} / ${inc.length} (${pct(longDur.length, inc.length).toFixed(1)}%)`, threshold: '≤ 5%', passed: lim(longDur.length, inc.length, 5), rec: 'Dividir las actividades largas en paquetes de trabajo medibles.' },
+    { id: 9, name: 'Fechas inválidas / incoherentes', result: `${invalid.length} / ${T.length} (${pct(invalid.length, T.length).toFixed(1)}%)`, threshold: '0%', passed: invalid.length === 0, rec: 'Actualizar el cronograma a la fecha de corte; corregir inicios pasados sin real y fechas reales futuras.' },
+    { id: 10, name: 'Asignación de recursos', result: `${noRes.length} / ${work.length} (${pct(noRes.length, work.length).toFixed(1)}%)`, threshold: '≤ 5%', passed: lim(noRes.length, work.length, 5), rec: 'Asignar recursos a todas las actividades pendientes operativas.' },
+    { id: 11, name: 'Tareas perdidas (vs. línea base)', result: shouldDone.length ? `${missed.length} / ${shouldDone.length} (${pct(missed.length, shouldDone.length).toFixed(1)}%)` : 'Sin línea base', threshold: '≤ 5%', passed: shouldDone.length ? lim(missed.length, shouldDone.length, 5) : null, rec: 'Analizar causas de atraso y presentar un plan de recuperación formal.' },
+    { id: 12, name: 'Prueba de ruta crítica (aprox.)', result: critical.length ? `${critHeads.length} inicio(s) crítico(s)` : 'Sin ruta crítica', threshold: 'Ruta continua', passed: critical.length > 0 && critHeads.length <= 1, rec: 'Asegurar una única ruta crítica continua hasta la fecha de fin del proyecto.' },
+    { id: 13, name: 'CPLI (Índice de longitud de ruta)', result: cpli !== null ? cpli.toFixed(2) : 'N/D', threshold: '≥ 0.95',  >= 0.95 : null, rec: 'Un CPLI bajo indica un plazo no realista; reestructurar la lógica de la ruta crítica.' },
+    { id: 14, name: 'BEI (Índice de ejecución línea base)', result: bei !== null ? bei.toFixed(2) : 'N/D', threshold: '≥ 0.95', passed: bei !== null ? bei >= 0.95 : null, rec: 'Ajustar el ritmo de avance para alinearse con la línea base.' }
+  ];
 
-        // File Parsing Logic (Primavera .XER and MS Project .XML)
-        function processUploadedFile(file) {
-            const fileName = file.name;
-            const extension = fileName.split('.').pop().toLowerCase();
+  // Relaciones fuera de secuencia: sucesora iniciada con predecesora abierta
+  const outOfSeq = R.filter(r => {
+    const a = map.get(r.pred), b = map.get(r.succ);
+    return a.type !== 'loe' && b.type !== 'loe' && b.started && !a.completed;
+  });
 
-            const reader = new FileReader();
+  const evaluated = metrics.filter(m => m.passed !== null).length;
+  const passedCount = metrics.filter(m => m.passed === true).length;
+  const score = evaluated ? Math.round(passedCount / evaluated * 100) : 0;
+  const quality = score >= 80 ? 'Alta' : score >= 60 ? 'Media' : 'Baja';
 
-            reader.onload = function(e) {
-                const content = e.target.result;
+  return {
+    p, dd, metrics, score, passedCount, evaluated, quality, cpli, cpl, bei,
+    critical, critHeads, noLogic, leads, lags, fs, fsPct, totalRel, hard, highFloat,
+    negFloat, longDur, invalid, noRes, shouldDone, missed, inc, work, T, map, R, outOfSeq, hasPred, hasSucc
+  };
+}
 
-                if (extension === 'xer') {
-                    parseXerFile(content, fileName);
-                } else if (extension === 'xml') {
-                    parseXmlFile(content, fileName);
-                } else {
-                    // Fallback simulated parsing for MPP files or unhandled formats
-                    simulateFileParsing(fileName);
-                }
-            };
+/* ==========================================================
+   RENDERIZADO
+   ========================================================== */
+const COLORS = {
+  emerald: { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', bar: 'bg-emerald-400' },
+  amber:   { text: 'text-amber-400',   bg: 'bg-amber-500/10',   border: 'border-amber-500/20',   bar: 'bg-amber-400' },
+  rose:    { text: 'text-rose-400',    bg: 'bg-rose-500/10',    border: 'border-rose-500/20',    bar: 'bg-rose-400' },
+  slate:   { text: 'text-slate-400',   bg: 'bg-slate-500/10',   border: 'border-slate-500/20',   bar: 'bg-slate-400' }
+};
+const scoreColor = s => s >= 80 ? 'emerald' : s >= 60 ? 'amber' : 'rose';
 
-            if (extension === 'mpp') {
-                // Browser cannot natively parse binary MPP; use intelligent fallback auditor
-                simulateFileParsing(fileName);
-            } else {
-                reader.readAsText(file);
-            }
-        }
+function setTextColor(el, c) { el.className = el.className.replace(/text-(emerald|amber|rose|slate)-400/g, '').trim() + ' ' + COLORS[c].text; }
 
-        // Parse Primavera P6 .XER Text Format
-        function parseXerFile(content, fileName) {
-            try {
-                const lines = content.split('\n');
-                let tasks = [];
-                let preds = [];
-                let currentTable = '';
+function empty(cols) { return `<tr><td colspan="${cols}" class="py-4 px-3 text-center text-slate-500">Sin hallazgos en esta categoría ✔</td></tr>`; }
 
-                lines.forEach(line => {
-                    if (line.startsWith('%T')) {
-                        currentTable = line.split('\t')[1]?.trim();
-                    } else if (line.startsWith('%R') || line.startsWith('%F')) {
-                        // Header row or metadata row
-                    } else if (currentTable === 'TASK' && line.trim()) {
-                        const cols = line.split('\t');
-                        if (cols.length > 5) {
-                            tasks.push({
-                                id: cols[1] || 'ACT',
-                                code: cols[2] || cols[1],
-                                name: cols[3] || 'Actividad P6',
-                                status: cols[4] || 'Not Started'
-                            });
-                        }
-                    } else if (currentTable === 'TASKPRED' && line.trim()) {
-                        const cols = line.split('\t');
-                        if (cols.length > 3) {
-                            preds.push({
-                                predId: cols[2],
-                                succId: cols[3],
-                                type: cols[4] || 'PR_FS'
-                            });
-                        }
-                    }
-                });
+function render(a) {
+  const p = a.p;
+  $('emptyState').classList.add('hidden');
+  $('results').classList.remove('hidden');
+  $('printBtn').disabled = false;
+  $('printProjectName').textContent = p.projectName;
+  $('printDate').textContent = new Date().toLocaleDateString('es-CL');
+  $('printDataDate').textContent = fmtDate(p.dataDate);
 
-                const actCount = tasks.length || 120;
-                const relCount = preds.length || 115;
+  // KPIs
+  const sc = scoreColor(a.score);
+  $('kpiDcmaScore').textContent = a.score + '%';
+  setTextColor($('kpiDcmaScore'), sc);
+  $('kpiDcmaBar').style.width = a.score + '%';
+  $('kpiDcmaBar').className = `h-1.5 rounded-full ${COLORS[sc].bar}`;
+  $('kpiDcmaPassed').textContent = `${a.passedCount}/${a.evaluated} ok`;
 
-                // Build Dynamic Analyzed Object
-                const parsedResult = {
-                    projectName: fileName.replace('.xer', ''),
-                    dataDate: new Date().toISOString().split('T')[0],
-                    totalActivities: actCount,
-                    incompleteActivities: Math.round(actCount * 0.35),
-                    totalRelations: relCount,
-                    dcmaScore: Math.floor(Math.random() * (85 - 60) + 60),
-                    passedMetricsCount: 9,
-                    qualityLevel: "Media",
-                    cpli: 0.92,
-                    bei: 0.98,
-                    criticalCount: Math.round(actCount * 0.2),
-                    dcmaMetrics: [...demoProjectData.dcmaMetrics],
-                    openEnds: [
-                        { id: tasks[0]?.code || "A100", name: tasks[0]?.name || "Inicio Proyecto", status: "No Iniciada", issue: "Sin predecesora (Hito Inicio)" },
-                        { id: tasks[tasks.length - 1]?.code || "A999", name: tasks[tasks.length - 1]?.name || "Fin Proyecto", status: "No Iniciada", issue: "Sin sucesora (Hito Fin)" }
-                    ],
-                    outOfSeq: demoProjectData.outOfSeq,
-                    negFloat: demoProjectData.negFloat.slice(0, 4),
-                    constraints: demoProjectData.constraints.slice(0, 3),
-                    resources: demoProjectData.resources
-                };
+  const qb = $('kpiQualityBadge');
+  const qc = scoreColor(a.score);
+  qb.textContent = a.quality;
+  qb.className = `px-2.5 py-1 rounded-md font-bold text-xs border ${COLORS[qc].bg} ${COLORS[qc].text} ${COLORS[qc].border}`;
+  $('kpiQualityDesc').textContent = a.quality === 'Alta' ? 'Cronograma confiable' : a.quality === 'Media' ? 'Requiere ajustes puntuales' : 'Requiere ajustes en lógica y holgura';
 
-                currentProject = parsedResult;
-                renderDashboard(currentProject);
+  $('kpiTotalActivities').textContent = a.T.length;
+  $('kpiIncompleteAct').textContent = `${a.inc.length} incompletas`;
+  $('kpiTotalRelations').textContent = a.totalRel;
+  $('kpiFsRatio').textContent = `${a.fsPct.toFixed(1)}% tipo FS`;
+  $('kpiDataDate').textContent = fmtDate(p.dataDate);
+  $('kpiProjectName').textContent = `Proyecto: ${p.projectName}`;
+  $('kpiCpli').textContent = a.cpli !== null ? a.cpli.toFixed(2) : 'N/D';
+  setTextColor($('kpiCpli'), a.cpli !== null && a.cpli >= 0.95 ? 'emerald' : 'rose');
 
-            } catch (err) {
-                console.error("XER Parsing Error:", err);
-                simulateFileParsing(fileName);
-            }
-        }
+  // Tabla DCMA
+  $('dcmaTableBody').innerHTML = a.metrics.map(m => {
+    const st = m.passed === null ? ['N/E', 'slate', 'text-slate-400'] : m.passed ? ['Cumple', 'emerald', ''] : ['No Cumple', 'rose', ''];
+    const c = COLORS[st[1]];
+    return `<tr class="hover:bg-slate-800/40 transition">
+      <td class="py-3 px-3 text-center code-font text-slate-400 font-bold">${m.id}</td>
+      <td class="py-3 px-3 font-semibold text-slate-200">${esc(m.name)}</td>
+      <td class="py-3 px-3 text-center code-font font-bold ${c.text}">${esc(m.result)}</td>
+      <td class="py-3 px-3 text-center text-slate-400 code-font">${esc(m.threshold)}</td>
+      <td class="py-3 px-3 text-center"><span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold ${c.bg} ${c.text} border ${c.border}">${st[0]}</span></td>
+      <td class="py-3 px-3 text-slate-300 text-[11px] leading-relaxed">${esc(m.rec)}</td>
+    </tr>`;
+  }).join('');
 
-        // Parse MS Project .XML Format
-        function parseXmlFile(content, fileName) {
-            try {
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(content, "text/xml");
-                const tasks = xmlDoc.getElementsByTagName("Task");
-                
-                const actCount = tasks.length || 85;
+  // Ruta crítica
+  const cards = [
+    ['Actividades críticas (holgura ≤ 0)', a.critical.length, a.critical.length ? 'rose' : 'emerald'],
+    ['Inicios de cadena crítica', a.critHeads.length, 'amber'],
+    ['Holgura negativa', a.negFloat.length, a.negFloat.length ? 'rose' : 'emerald'],
+    ['Restricciones duras', a.hard.length, a.hard.length ? 'amber' : 'emerald'],
+    ['Días laborables hasta fin', a.cpl, 'slate'],
+    ['BEI', a.bei !== null ? a.bei.toFixed(2) : 'N/D', a.bei !== null && a.bei >= 0.95 ? 'emerald' : 'rose']
+  ];
+  $('cpCards').innerHTML = cards.map(([l, v, c]) => `
+    <div class="p-3 rounded-xl bg-slate-900/50 border border-slate-800">
+      <p class="text-[11px] text-slate-400">${l}</p>
+      <p class="text-xl font-bold mt-1 ${COLORS[c].text}">${v}</p>
+    </div>`).join('');
 
-                const parsedResult = {
-                    projectName: fileName.replace('.xml', ''),
-                    dataDate: new Date().toISOString().split('T')[0],
-                    totalActivities: actCount,
-                    incompleteActivities: Math.round(actCount * 0.4),
-                    totalRelations: Math.round(actCount * 1.1),
-                    dcmaScore: 71,
-                    passedMetricsCount: 10,
-                    qualityLevel: "Media",
-                    cpli: 0.96,
-                    bei: 0.99,
-                    criticalCount: Math.round(actCount * 0.15),
-                    dcmaMetrics: [...demoProjectData.dcmaMetrics],
-                    openEnds: demoProjectData.openEnds.slice(0, 3),
-                    outOfSeq: demoProjectData.outOfSeq.slice(0, 3),
-                    negFloat: demoProjectData.negFloat.slice(0, 3),
-                    constraints: demoProjectData.constraints.slice(0, 2),
-                    resources: demoProjectData.resources
-                };
+  $('cpDiagnosisText').textContent =
+    `Se identificaron ${a.critical.length} actividades abiertas con holgura ≤ 0 días, distribuidas en ${a.critHeads.length} cadena(s) crítica(s). ` +
+    `${a.negFloat.length} actividad(es) presentan holgura negativa y ${a.hard.length} tienen restricciones duras, lo que distorsiona la ruta crítica. ` +
+    (a.cpli !== null ? `El CPLI calculado es ${a.cpli.toFixed(2)} (meta ≥ 0.95).` : 'No fue posible calcular el CPLI con los datos disponibles.');
 
-                currentProject = parsedResult;
-                renderDashboard(currentProject);
+  // Barras de hallazgos
+  const bars = [
+    ['Sin lógica', a.noLogic.length, a.inc.length],
+    ['Fuera de secuencia', a.outOfSeq.length, a.R.length],
+    ['Holgura negativa', a.negFloat.length, a.inc.length],
+    ['Restricciones duras', a.hard.length, a.inc.length],
+    ['Sin recursos', a.noRes.length, a.work.length]
+  ];
+  $('findingBars').innerHTML = bars.map(([l, n, d]) => {
+    const v = pct(n, d); const c = v > 5 ? 'rose' : v > 0 ? 'amber' : 'emerald';
+    return `<div>
+      <div class="flex justify-between mb-1"><span class="text-slate-300">${l}</span><span class="code-font ${COLORS[c].text}">${n} (${v.toFixed(1)}%)</span></div>
+      <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden"><div class="${COLORS[c].bar} h-1.5 rounded-full" style="width:${Math.min(v, 100)}%"></div></div>
+    </div>`;
+  }).join('');
 
-            } catch (err) {
-                console.error("XML Parsing Error:", err);
-                simulateFileParsing(fileName);
-            }
-        }
+  // Contadores de pestañas
+  $('countOpenEnds').textContent = a.noLogic.length;
+  $('countOutOfSeq').textContent = a.outOfSeq.length;
+  $('countNegFloat').textContent = a.negFloat.length;
+  $('countConstraints').textContent = a.hard.length + a.inc.filter(t => t.cstr && !HARD_CONSTRAINTS.includes(t.cstr)).length;
+  $('countResources').textContent = a.noRes.length;
 
-        // Fallback simulation for non-plaintext or unparsed schedules
-        function simulateFileParsing(fileName) {
-            const simulated = {
-                ...demoProjectData,
-                projectName: fileName,
-                dataDate: new Date().toISOString().split('T')[0],
-                dcmaScore: 64,
-                passedMetricsCount: 9,
-                qualityLevel: "Media"
-            };
-            currentProject = simulated;
-            renderDashboard(currentProject);
-        }
-    </script>
+  // Tablas de hallazgos
+  $('openEndsTableBody').innerHTML = a.noLogic.length ? a.noLogic.map(t => {
+    const issues = [];
+    if (!a.hasPred.has(t.key)) issues.push('Sin predecesora');
+    if (!a.hasSucc.has(t.key)) issues.push('Sin sucesora');
+    return `<tr class="hover:bg-slate-800/40"><td class="py-2.5 px-3 code-font text-sky-400 font-bold">${esc(t.id)}</td><td class="py-2.5 px-3 text-slate-200">${esc(t.name)}</td><td class="py-2.5 px-3 text-slate-400">${t.started ? 'Iniciada' : 'No iniciada'}</td><td class="py-2.5 px-3 text-rose-400 font-medium">${issues.join(' / ')}</td></tr>`;
+  }).join('') : empty(4);
+
+  $('outOfSeqTableBody').innerHTML = a.outOfSeq.length ? a.outOfSeq.map(r => {
+    const pr = a.map.get(r.pred), sc2 = a.map.get(r.succ);
+    return `<tr class="hover:bg-slate-800/40"><td class="py-2.5 px-3 code-font text-amber-400 font-semibold">${esc(pr.id)} → ${esc(sc2.id)}</td><td class="py-2.5 px-3 font-bold text-slate-300">${r.type}</td><td class="py-2.5 px-3 text-slate-200">${esc(sc2.name)}</td><td class="py-2.5 px-3 text-rose-400">Sucesora iniciada con predecesora abierta</td></tr>`;
+  }).join('') : empty(4);
+
+  $('negFloatTableBody').innerHTML = a.negFloat.length ? a.negFloat.map(t => `
+    <tr class="hover:bg-slate-800/40"><td class="py-2.5 px-3 code-font text-sky-400 font-bold">${esc(t.id)}</td><td class="py-2.5 px-3 text-slate-200">${esc(t.name)}</td><td class="py-2.5 px-3 text-right code-font font-bold text-rose-400">${t.tf.toFixed(1)} d</td><td class="py-2.5 px-3 text-slate-400">${fmtDate(t.finish)}</td></tr>`).join('') : empty(4);
+
+  const cstrTasks = a.inc.filter(t => t.cstr);
+  $('constraintsTableBody').innerHTML = cstrTasks.length ? cstrTasks.map(t => `
+    <tr class="hover:bg-slate-800/40"><td class="py-2.5 px-3 code-font text-sky-400 font-bold">${esc(t.id)}</td><td class="py-2.5 px-3 text-slate-200">${esc(t.name)}</td><td class="py-2.5 px-3 ${HARD_CONSTRAINTS.includes(t.cstr) ? 'text-rose-400' : 'text-amber-400'} font-medium">${CSTR_LABEL[t.cstr]}</td><td class="py-2.5 px-3 code-font text-slate-300">${fmtDate(t.cstrDate)}</td></tr>`).join('') : empty(4);
+
+  $('resourcesTableBody').innerHTML = a.noRes.length ? a.noRes.map(t => `
+    <tr class="hover:bg-slate-800/40"><td class="py-2.5 px-3 code-font text-sky-400 font-bold">${esc(t.id)}</td><td class="py-2.5 px-3 text-slate-200">${esc(t.name)}</td><td class="py-2.5 px-3 text-rose-400">Actividad pendiente sin recursos asignados</td></tr>`).join('') : empty(3);
+}
+
+/* ==========================================================
+   CARGA DE ARCHIVOS
+   ========================================================== */
+let currentAudit = null;
+
+function handleFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'mpp') {
+    showStatus('Los archivos .MPP son binarios y no pueden leerse en el navegador. En MS Project use Archivo › Guardar como › XML y cargue ese archivo.', 'error');
+    return;
+  }
+  if (!['xer', 'xml'].includes(ext)) {
+    showStatus('Formato no soportado. Use un archivo .XER (Primavera P6) o .XML (MS Project).', 'error');
+    return;
+  }
+  showStatus(`Procesando ${file.name}…`, 'info');
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const proj = ext === 'xer' ? parseXER(e.target.result) : parseMSPXML(e.target.result);
+      if (!proj.tasks.length) throw new Error('No se encontraron actividades en el archivo.');
+      currentAudit = analyze(proj);
+      render(currentAudit);
+      showStatus(`Auditoría completada: ${proj.tasks.length} actividades y ${proj.rels.length} relaciones analizadas (${proj.source}).`, 'ok');
+    } catch (err) {
+      console.error(err);
+      showStatus('Error al procesar el archivo: ' + err.message, 'error');
+    }
+  };
+  reader.onerror = () => showStatus('No se pudo leer el archivo.', 'error');
+  reader.readAsText(file, 'utf-8');
+}
+
+/* ==========================================================
+   INICIALIZACIÓN
+   ========================================================== */
+document.addEventListener('DOMContentLoaded', () => {
+  lucide.createIcons();
+
+  const dz = $('dropZone'), fi = $('fileInput');
+  dz.addEventListener('click', () => fi.click());
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('border-sky-400', 'bg-sky-500/10'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('border-sky-400', 'bg-sky-500/10'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault();
+    dz.classList.remove('border-sky-400', 'bg-sky-500/10');
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+  });
+  fi.addEventListener('change', e => {
+    if (e.target.files.length) handleFile(e.target.files[0]);
+    e.target.value = '';
+  });
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('bg-sky-600', 'text-white');
+        b.classList.add('text-slate-400');
+      });
+      btn.classList.add('bg-sky-600', 'text-white');
+      btn.classList.remove('text-slate-400');
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+      $(btn.dataset.tab).classList.remove('hidden');
+    });
+  });
+
+  $('printBtn').addEventListener('click', () => {
+    if (!currentAudit) return;
+    window.print();
+  });
+});
+</script>
 </body>
 </html>
