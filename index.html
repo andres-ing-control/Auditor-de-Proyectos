@@ -500,7 +500,7 @@ function analyze(p) {
     { id: 10, name: 'Asignación de recursos', result: `${noRes.length} / ${work.length} (${pct(noRes.length, work.length).toFixed(1)}%)`, threshold: '≤ 5%', passed: lim(noRes.length, work.length, 5), rec: 'Asignar recursos a todas las actividades pendientes operativas.' },
     { id: 11, name: 'Tareas perdidas (vs. línea base)', result: shouldDone.length ? `${missed.length} / ${shouldDone.length} (${pct(missed.length, shouldDone.length).toFixed(1)}%)` : 'Sin línea base', threshold: '≤ 5%', passed: shouldDone.length ? lim(missed.length, shouldDone.length, 5) : null, rec: 'Analizar causas de atraso y presentar un plan de recuperación formal.' },
     { id: 12, name: 'Prueba de ruta crítica (aprox.)', result: critical.length ? `${critHeads.length} inicio(s) crítico(s)` : 'Sin ruta crítica', threshold: 'Ruta continua', passed: critical.length > 0 && critHeads.length <= 1, rec: 'Asegurar una única ruta crítica continua hasta la fecha de fin del proyecto.' },
-    { id: 13, name: 'CPLI (Índice de longitud de ruta)', result: cpli !== null ? cpli.toFixed(2) : 'N/D', threshold: '≥ 0.95',  >= 0.95 : null, rec: 'Un CPLI bajo indica un plazo no realista; reestructurar la lógica de la ruta crítica.' },
+    { id: 13, name: 'CPLI (Índice de longitud de ruta)', result: cpli !== null ? cpli.toFixed(2) : 'N/D', threshold: '≥ 0.95', passed: cpli !== null ? cpli >= 0.95 : null, rec: 'Un CPLI bajo indica un plazo no realista; reestructurar la lógica de la ruta crítica.' },
     { id: 14, name: 'BEI (Índice de ejecución línea base)', result: bei !== null ? bei.toFixed(2) : 'N/D', threshold: '≥ 0.95', passed: bei !== null ? bei >= 0.95 : null, rec: 'Ajustar el ritmo de avance para alinearse con la línea base.' }
   ];
   // Relaciones fuera de secuencia: sucesora iniciada con predecesora abierta
@@ -664,9 +664,9 @@ function handleFile(file) {
    INICIALIZACIÓN
    ========================================================== */
 document.addEventListener('DOMContentLoaded', () => {
-  lucide.createIcons();
+  if (window.lucide) lucide.createIcons();
   const dz = $('dropZone'), fi = $('fileInput');
-  dz.addEventListener('click', () => fi.click());
+  dz.addEventListener('click', e => { if (e.target !== fi) fi.click(); });
   dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('border-sky-400', 'bg-sky-500/10'); });
   dz.addEventListener('dragleave', () => dz.classList.remove('border-sky-400', 'bg-sky-500/10'));
   dz.addEventListener('drop', e => {
