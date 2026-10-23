@@ -16,6 +16,7 @@
   ::-webkit-scrollbar-track { background: #0f172a; }
   ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
   .print-only { display: none; }
+
   @page { size: A4 landscape; margin: 10mm; }
   @media print {
     body { background: #fff !important; color: #0f172a !important; }
@@ -25,6 +26,10 @@
     .text-white, .text-slate-200, .text-slate-300 { color: #0f172a !important; }
     .text-slate-400, .text-slate-500 { color: #475569 !important; }
     .tab-content { display: block !important; margin-bottom: 14px; }
+    .print-cover { display: block !important; page-break-after: always; }
+    .print-section-title { display: block !important; font-size: 13pt; font-weight: 700; color: #0c4a6e !important; border-bottom: 2px solid #0284c7; padding-bottom: 4px; margin: 12px 0 8px; page-break-after: avoid; }
+    #tab-openends, #tab-outofseq, #tab-negativefloat, #tab-constraints, #tab-resources { display: block !important; }
+    .tab-btn, .tab-switch { display: none !important; }
     .tab-content.hidden { display: block !important; }
     section, .glass-panel { break-inside: avoid-page; }
     tr { break-inside: avoid; }
@@ -34,6 +39,7 @@
 </style>
 </head>
 <body class="min-h-screen flex flex-col">
+
 <!-- HEADER -->
 <header class="sticky top-0 z-40 glass-panel border-b border-slate-800/80 px-4 lg:px-8 py-3.5 no-print">
   <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
@@ -57,6 +63,22 @@
     </div>
   </div>
 </header>
+
+<!-- PORTADA DE INFORME (solo impresión) -->
+<div class="print-only print-cover" style="padding:60px 30px;">
+  <p style="font-size:11pt;color:#475569;letter-spacing:.1em;text-transform:uppercase">Informe técnico de gerencia</p>
+  <h1 style="font-size:26pt;font-weight:800;color:#0c4a6e;margin:10px 0">Auditoría de Calidad del Cronograma</h1>
+  <p style="font-size:13pt;color:#334155">Evaluación bajo el estándar DCMA 14 Puntos</p>
+  <div style="margin-top:40px;font-size:11pt;color:#334155;line-height:1.9">
+    <p><strong>Proyecto:</strong> <span id="coverProject"></span></p>
+    <p><strong>Fuente:</strong> <span id="coverSource"></span></p>
+    <p><strong>Fecha de corte:</strong> <span id="coverDataDate"></span></p>
+    <p><strong>Fecha del informe:</strong> <span id="coverDate"></span></p>
+    <p><strong>Preparado por:</strong> Andrés Pérez Riquelme, Especialista en Control de Proyectos</p>
+  </div>
+  <p style="margin-top:60px;font-size:9pt;color:#64748b">Documento de uso interno. Los resultados corresponden a un análisis automatizado del archivo entregado y deben validarse con el planificador responsable.</p>
+</div>
+
 <!-- PRINT HEADER -->
 <div class="print-only p-4 border-b border-slate-300 mb-4">
   <div class="flex justify-between items-center">
@@ -72,7 +94,9 @@
     </div>
   </div>
 </div>
+
 <main class="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 space-y-6">
+
   <!-- UPLOAD -->
   <section class="glass-panel rounded-2xl p-6 no-print">
     <div class="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -101,10 +125,16 @@
     </div>
     <div id="statusMsg" class="hidden mt-4 p-3 rounded-lg text-xs border"></div>
   </section>
+
   <div id="emptyState" class="glass-panel rounded-2xl p-10 text-center text-slate-400 text-sm no-print">
     Cargue un archivo de cronograma para iniciar la auditoría DCMA 14 Puntos.
   </div>
+
   <div id="results" class="hidden space-y-6">
+
+    <!-- RESUMEN EJECUTIVO -->
+    <section id="execSummary" class="glass-panel rounded-2xl p-6 space-y-4"></section>
+
     <!-- KPIs -->
     <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
       <div class="glass-card rounded-xl p-4 flex flex-col justify-between">
@@ -149,6 +179,7 @@
         <p class="text-[11px] text-slate-400 mt-2">Meta: ≥ 0.95</p>
       </div>
     </section>
+
     <!-- DCMA TABLE -->
     <section class="glass-panel rounded-2xl p-6">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-800 gap-2">
@@ -181,6 +212,7 @@
         </table>
       </div>
     </section>
+
     <!-- CRITICAL PATH + SUMMARY -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       <div class="lg:col-span-7 glass-panel rounded-2xl p-6 space-y-4">
@@ -204,6 +236,26 @@
         <div id="findingBars" class="space-y-3 text-xs"></div>
       </div>
     </div>
+
+    <!-- CURVA S -->
+    <section class="glass-panel rounded-2xl p-6 space-y-4">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 pb-3 border-b border-slate-800">
+        <div>
+          <h3 class="text-base font-bold text-white flex items-center gap-2"><i data-lucide="line-chart" class="w-5 h-5 text-sky-400"></i> Curva S: Planificado vs. Temprano vs. Real</h3>
+          <p class="text-xs text-slate-400">Porcentaje acumulado de actividades terminadas por mes, calculado desde el archivo cargado</p>
+        </div>
+        <div class="flex gap-3 text-[11px] text-slate-400">
+          <span><span class="inline-block w-3 h-0.5 bg-amber-400 align-middle mr-1"></span>Línea base</span>
+          <span><span class="inline-block w-3 h-0.5 bg-sky-400 align-middle mr-1"></span>Fin temprano</span>
+          <span><span class="inline-block w-3 h-0.5 bg-emerald-400 align-middle mr-1"></span>Real</span>
+        </div>
+      </div>
+      <div class="bg-slate-900/60 rounded-xl p-3 border border-slate-800/80">
+        <svg id="sCurveSvg" viewBox="0 0 620 260" class="w-full h-64" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <div id="sCurveSummary" class="text-xs text-slate-300"></div>
+    </section>
+
     <!-- FINDINGS TABS -->
     <section class="glass-panel rounded-2xl p-6">
       <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-800 gap-4 no-print">
@@ -222,6 +274,7 @@
           <button class="tab-btn px-3 py-1.5 rounded-lg font-semibold transition text-slate-400 hover:text-white" data-tab="tab-resources">Sin Recursos (<span id="countResources">0</span>)</button>
         </div>
       </div>
+
       <div class="mt-4">
         <div id="tab-openends" class="tab-content">
           <h4 class="print-only text-sm font-bold mb-2">Actividades sin lógica (sin predecesora o sucesora)</h4>
@@ -262,9 +315,11 @@
     </section>
   </div>
 </main>
+
 <footer class="glass-panel border-t border-slate-800/80 py-4 px-6 text-center text-xs text-slate-400 no-print mt-8">
   <p>Auditoría de Cronogramas P6 & MS Project • Desarrollado para <strong>Andrés Pérez Riquelme</strong></p>
 </footer>
+
 <script>
 /* ==========================================================
    CONSTANTES Y UTILIDADES
@@ -280,6 +335,7 @@ const CSTR_LABEL = {
   FNET: 'No terminar antes de (FNET)',
   FNLT: 'No terminar después de (FNLT)'
 };
+
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
@@ -291,6 +347,7 @@ const toDate = s => {
 const startOfDay = d => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
 const fmtDate = d => d ? d.toLocaleDateString('es-CL') : '—';
 const pct = (n, d) => d ? (n / d) * 100 : 0;
+
 function businessDays(a, b) {
   if (!a || !b) return 0;
   const s = startOfDay(a), e = startOfDay(b);
@@ -299,6 +356,7 @@ function businessDays(a, b) {
   while (cur < e) { cur.setDate(cur.getDate() + 1); const w = cur.getDay(); if (w !== 0 && w !== 6) n++; }
   return n;
 }
+
 function showStatus(msg, type = 'info') {
   const el = $('statusMsg');
   const styles = {
@@ -309,6 +367,7 @@ function showStatus(msg, type = 'info') {
   el.className = `mt-4 p-3 rounded-lg text-xs border ${styles[type]}`;
   el.textContent = msg;
 }
+
 /* ==========================================================
    PARSER PRIMAVERA P6 (.XER)
    ========================================================== */
@@ -328,10 +387,13 @@ function parseXER(text) {
     }
   }
   if (!tables.TASK || !tables.TASK.length) throw new Error('El archivo XER no contiene la tabla TASK con actividades.');
+
   const proj = (tables.PROJECT || [])[0] || {};
   const dataDate = toDate(proj.last_recalc_date) || new Date();
+
   const rsrcCount = {};
   (tables.TASKRSRC || []).forEach(r => { rsrcCount[r.task_id] = (rsrcCount[r.task_id] || 0) + 1; });
+
   const normCstrXER = code => {
     const c = (code || '').replace('CS_', '');
     if (c === 'MSO' || c === 'MSOB') return 'MSO';
@@ -339,6 +401,7 @@ function parseXER(text) {
     if (['SNET','SNLT','FNET','FNLT'].includes(c)) return c;
     return null;
   };
+
   const tasks = tables.TASK.map(r => {
     const status = r.status_code || '';
     const type = (r.task_type || '');
@@ -364,6 +427,7 @@ function parseXER(text) {
       resources: rsrcCount[r.task_id] || 0
     };
   });
+
   const relMap = { PR_FS: 'FS', PR_SS: 'SS', PR_FF: 'FF', PR_SF: 'SF' };
   const rels = (tables.TASKPRED || []).map(r => ({
     pred: String(r.pred_task_id),
@@ -371,8 +435,10 @@ function parseXER(text) {
     type: relMap[r.pred_type] || 'FS',
     lag: num(r.lag_hr_cnt) / HOURS_PER_DAY
   }));
+
   return { projectName: proj.proj_short_name || proj.proj_id || 'Proyecto P6', dataDate, tasks, rels, source: 'Primavera P6 (XER)' };
 }
+
 /* ==========================================================
    PARSER MS PROJECT (.XML)
    ========================================================== */
@@ -382,38 +448,48 @@ function parseMSPDuration(s) {
   if (!m) return 0;
   return num(m[1]) + num(m[2]) / HOURS_PER_DAY + num(m[3]) / (HOURS_PER_DAY * 60);
 }
+
 function parseMSPXML(text) {
   const doc = new DOMParser().parseFromString(text, 'application/xml');
   if (doc.getElementsByTagName('parsererror').length) throw new Error('El XML no es válido.');
   const root = doc.documentElement;
   if (root.localName !== 'Project') throw new Error('El XML no corresponde a un proyecto de MS Project.');
+
   const child = (el, n) => { for (const c of el.children) if (c.localName === n) return c; return null; };
   const ch = (el, n) => { const c = child(el, n); return c ? c.textContent.trim() : null; };
+
   const dataDate = toDate(ch(root, 'StatusDate')) || toDate(ch(root, 'CurrentDate')) || new Date();
   const projectName = ch(root, 'Name') || ch(root, 'Title') || 'Proyecto MS Project';
+
   const rsrcCount = {};
   root.getElementsByTagName('Assignment').length && Array.from(root.getElementsByTagName('Assignment')).forEach(a => {
     const t = ch(a, 'TaskUID'), r = ch(a, 'ResourceUID');
     if (t && r && r !== '-65535' && r !== '0') rsrcCount[t] = (rsrcCount[t] || 0) + 1;
   });
+
   const cstrMap = { 2: 'MSO', 3: 'MFO', 4: 'SNET', 5: 'SNLT', 6: 'FNET', 7: 'FNLT' };
   const tasksNode = child(root, 'Tasks');
   const taskEls = tasksNode ? Array.from(tasksNode.children).filter(e => e.localName === 'Task') : [];
+
   const tasks = [], rels = [];
   taskEls.forEach(t => {
     const uid = ch(t, 'UID');
     if (!uid || uid === '0') return;                 // Tarea resumen del proyecto
     if (ch(t, 'Summary') === '1') return;            // Tareas resumen (no se auditan)
     if (ch(t, 'Active') === '0') return;
+
     const pct = num(ch(t, 'PercentComplete'));
     const aFinish = toDate(ch(t, 'ActualFinish'));
     const aStart = toDate(ch(t, 'ActualStart'));
     const completed = pct >= 100 || !!aFinish;
     const started = completed || !!aStart || pct > 0;
+
     const baseline = Array.from(t.children).find(c => c.localName === 'Baseline' && ch(c, 'Number') === '0');
     const bFinish = baseline ? toDate(ch(baseline, 'Finish')) : null;
+
     const tsl = ch(t, 'TotalSlack');
     const cType = Number(ch(t, 'ConstraintType'));
+
     tasks.push({
       key: uid,
       id: ch(t, 'ID') || uid,
@@ -429,6 +505,7 @@ function parseMSPXML(text) {
       cstrDate: toDate(ch(t, 'ConstraintDate')),
       resources: rsrcCount[uid] || 0
     });
+
     Array.from(t.children).filter(c => c.localName === 'PredecessorLink').forEach(l => {
       const p = ch(l, 'PredecessorUID');
       if (!p) return;
@@ -440,8 +517,10 @@ function parseMSPXML(text) {
       });
     });
   });
+
   return { projectName, dataDate, tasks, rels, source: 'MS Project (XML)' };
 }
+
 /* ==========================================================
    MOTOR DE ANÁLISIS DCMA 14 PUNTOS
    ========================================================== */
@@ -454,6 +533,7 @@ function analyze(p) {
   const hasPred = new Set(R.map(r => r.succ));
   const hasSucc = new Set(R.map(r => r.pred));
   const work = inc.filter(t => t.type === 'task');
+
   const noLogic = inc.filter(t => !hasPred.has(t.key) || !hasSucc.has(t.key));
   const leads = R.filter(r => r.lag < 0);
   const lags = R.filter(r => r.lag > 0);
@@ -469,10 +549,12 @@ function analyze(p) {
   const noRes = work.filter(t => t.resources === 0);
   const shouldDone = T.filter(t => t.bFinish && startOfDay(t.bFinish) < dd);
   const missed = shouldDone.filter(t => !t.completed);
+
   // Ruta crítica (aproximación): tareas críticas y cabezas de cadena crítica
   const critical = inc.filter(t => t.tf !== null && t.tf <= 0);
   const critKeys = new Set(critical.map(t => t.key));
   const critHeads = critical.filter(t => !R.some(r => r.succ === t.key && critKeys.has(r.pred)));
+
   // CPLI
   const finishes = inc.map(t => t.finish).filter(Boolean);
   const projFinish = finishes.length ? new Date(Math.max(...finishes.map(d => d.getTime()))) : null;
@@ -480,13 +562,16 @@ function analyze(p) {
   const endTasks = inc.filter(t => !hasSucc.has(t.key) && t.tf !== null);
   const tfEnd = endTasks.length ? Math.min(...endTasks.map(t => t.tf)) : null;
   const cpli = (cpl > 0 && tfEnd !== null) ? (cpl + tfEnd) / cpl : null;
+
   // BEI
   const planned = T.filter(t => t.bFinish && startOfDay(t.bFinish) <= dd);
   const plannedDone = planned.filter(t => t.completed);
   const bei = planned.length ? plannedDone.length / planned.length : null;
+
   const totalRel = R.length;
   const fsPct = pct(fs.length, totalRel);
   const lim = (n, d, max) => pct(n, d) <= max;
+
   const metrics = [
     { id: 1, name: 'Lógica (sin predecesora o sucesora)', result: `${noLogic.length} / ${inc.length} (${pct(noLogic.length, inc.length).toFixed(1)}%)`, threshold: '≤ 5%', passed: lim(noLogic.length, inc.length, 5), rec: 'Vincular todas las actividades abiertas. Solo el inicio y fin del proyecto pueden quedar sin lógica.' },
     { id: 2, name: 'Adelantos (lags negativos)', result: `${leads.length} / ${totalRel} (${pct(leads.length, totalRel).toFixed(1)}%)`, threshold: '0%', passed: leads.length === 0, rec: 'Eliminar lags negativos; reemplazarlos por una lógica secuencial real.' },
@@ -503,21 +588,25 @@ function analyze(p) {
     { id: 13, name: 'CPLI (Índice de longitud de ruta)', result: cpli !== null ? cpli.toFixed(2) : 'N/D', threshold: '≥ 0.95', passed: cpli !== null ? cpli >= 0.95 : null, rec: 'Un CPLI bajo indica un plazo no realista; reestructurar la lógica de la ruta crítica.' },
     { id: 14, name: 'BEI (Índice de ejecución línea base)', result: bei !== null ? bei.toFixed(2) : 'N/D', threshold: '≥ 0.95', passed: bei !== null ? bei >= 0.95 : null, rec: 'Ajustar el ritmo de avance para alinearse con la línea base.' }
   ];
+
   // Relaciones fuera de secuencia: sucesora iniciada con predecesora abierta
   const outOfSeq = R.filter(r => {
     const a = map.get(r.pred), b = map.get(r.succ);
     return a.type !== 'loe' && b.type !== 'loe' && b.started && !a.completed;
   });
+
   const evaluated = metrics.filter(m => m.passed !== null).length;
   const passedCount = metrics.filter(m => m.passed === true).length;
   const score = evaluated ? Math.round(passedCount / evaluated * 100) : 0;
   const quality = score >= 80 ? 'Alta' : score >= 60 ? 'Media' : 'Baja';
+
   return {
     p, dd, metrics, score, passedCount, evaluated, quality, cpli, cpl, bei,
     critical, critHeads, noLogic, leads, lags, fs, fsPct, totalRel, hard, highFloat,
     negFloat, longDur, invalid, noRes, shouldDone, missed, inc, work, T, map, R, outOfSeq, hasPred, hasSucc
   };
 }
+
 /* ==========================================================
    RENDERIZADO
    ========================================================== */
@@ -528,16 +617,26 @@ const COLORS = {
   slate:   { text: 'text-slate-400',   bg: 'bg-slate-500/10',   border: 'border-slate-500/20',   bar: 'bg-slate-400' }
 };
 const scoreColor = s => s >= 80 ? 'emerald' : s >= 60 ? 'amber' : 'rose';
+
 function setTextColor(el, c) { el.className = el.className.replace(/text-(emerald|amber|rose|slate)-400/g, '').trim() + ' ' + COLORS[c].text; }
+
 function empty(cols) { return `<tr><td colspan="${cols}" class="py-4 px-3 text-center text-slate-500">Sin hallazgos en esta categoría ✔</td></tr>`; }
+
 function render(a) {
   const p = a.p;
   $('emptyState').classList.add('hidden');
   $('results').classList.remove('hidden');
   $('printBtn').disabled = false;
+  renderExec(a);
+  renderSCurve(a);
   $('printProjectName').textContent = p.projectName;
   $('printDate').textContent = new Date().toLocaleDateString('es-CL');
   $('printDataDate').textContent = fmtDate(p.dataDate);
+  $('coverProject').textContent = p.projectName;
+  $('coverSource').textContent = p.source;
+  $('coverDataDate').textContent = fmtDate(p.dataDate);
+  $('coverDate').textContent = new Date().toLocaleDateString('es-CL');
+
   // KPIs
   const sc = scoreColor(a.score);
   $('kpiDcmaScore').textContent = a.score + '%';
@@ -545,11 +644,13 @@ function render(a) {
   $('kpiDcmaBar').style.width = a.score + '%';
   $('kpiDcmaBar').className = `h-1.5 rounded-full ${COLORS[sc].bar}`;
   $('kpiDcmaPassed').textContent = `${a.passedCount}/${a.evaluated} ok`;
+
   const qb = $('kpiQualityBadge');
   const qc = scoreColor(a.score);
   qb.textContent = a.quality;
   qb.className = `px-2.5 py-1 rounded-md font-bold text-xs border ${COLORS[qc].bg} ${COLORS[qc].text} ${COLORS[qc].border}`;
   $('kpiQualityDesc').textContent = a.quality === 'Alta' ? 'Cronograma confiable' : a.quality === 'Media' ? 'Requiere ajustes puntuales' : 'Requiere ajustes en lógica y holgura';
+
   $('kpiTotalActivities').textContent = a.T.length;
   $('kpiIncompleteAct').textContent = `${a.inc.length} incompletas`;
   $('kpiTotalRelations').textContent = a.totalRel;
@@ -558,6 +659,7 @@ function render(a) {
   $('kpiProjectName').textContent = `Proyecto: ${p.projectName}`;
   $('kpiCpli').textContent = a.cpli !== null ? a.cpli.toFixed(2) : 'N/D';
   setTextColor($('kpiCpli'), a.cpli !== null && a.cpli >= 0.95 ? 'emerald' : 'rose');
+
   // Tabla DCMA
   $('dcmaTableBody').innerHTML = a.metrics.map(m => {
     const st = m.passed === null ? ['N/E', 'slate', 'text-slate-400'] : m.passed ? ['Cumple', 'emerald', ''] : ['No Cumple', 'rose', ''];
@@ -571,6 +673,7 @@ function render(a) {
       <td class="py-3 px-3 text-slate-300 text-[11px] leading-relaxed">${esc(m.rec)}</td>
     </tr>`;
   }).join('');
+
   // Ruta crítica
   const cards = [
     ['Actividades críticas (holgura ≤ 0)', a.critical.length, a.critical.length ? 'rose' : 'emerald'],
@@ -585,10 +688,12 @@ function render(a) {
       <p class="text-[11px] text-slate-400">${l}</p>
       <p class="text-xl font-bold mt-1 ${COLORS[c].text}">${v}</p>
     </div>`).join('');
+
   $('cpDiagnosisText').textContent =
     `Se identificaron ${a.critical.length} actividades abiertas con holgura ≤ 0 días, distribuidas en ${a.critHeads.length} cadena(s) crítica(s). ` +
     `${a.negFloat.length} actividad(es) presentan holgura negativa y ${a.hard.length} tienen restricciones duras, lo que distorsiona la ruta crítica. ` +
     (a.cpli !== null ? `El CPLI calculado es ${a.cpli.toFixed(2)} (meta ≥ 0.95).` : 'No fue posible calcular el CPLI con los datos disponibles.');
+
   // Barras de hallazgos
   const bars = [
     ['Sin lógica', a.noLogic.length, a.inc.length],
@@ -604,12 +709,14 @@ function render(a) {
       <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden"><div class="${COLORS[c].bar} h-1.5 rounded-full" style="width:${Math.min(v, 100)}%"></div></div>
     </div>`;
   }).join('');
+
   // Contadores de pestañas
   $('countOpenEnds').textContent = a.noLogic.length;
   $('countOutOfSeq').textContent = a.outOfSeq.length;
   $('countNegFloat').textContent = a.negFloat.length;
   $('countConstraints').textContent = a.hard.length + a.inc.filter(t => t.cstr && !HARD_CONSTRAINTS.includes(t.cstr)).length;
   $('countResources').textContent = a.noRes.length;
+
   // Tablas de hallazgos
   $('openEndsTableBody').innerHTML = a.noLogic.length ? a.noLogic.map(t => {
     const issues = [];
@@ -617,22 +724,116 @@ function render(a) {
     if (!a.hasSucc.has(t.key)) issues.push('Sin sucesora');
     return `<tr class="hover:bg-slate-800/40"><td class="py-2.5 px-3 code-font text-sky-400 font-bold">${esc(t.id)}</td><td class="py-2.5 px-3 text-slate-200">${esc(t.name)}</td><td class="py-2.5 px-3 text-slate-400">${t.started ? 'Iniciada' : 'No iniciada'}</td><td class="py-2.5 px-3 text-rose-400 font-medium">${issues.join(' / ')}</td></tr>`;
   }).join('') : empty(4);
+
   $('outOfSeqTableBody').innerHTML = a.outOfSeq.length ? a.outOfSeq.map(r => {
     const pr = a.map.get(r.pred), sc2 = a.map.get(r.succ);
     return `<tr class="hover:bg-slate-800/40"><td class="py-2.5 px-3 code-font text-amber-400 font-semibold">${esc(pr.id)} → ${esc(sc2.id)}</td><td class="py-2.5 px-3 font-bold text-slate-300">${r.type}</td><td class="py-2.5 px-3 text-slate-200">${esc(sc2.name)}</td><td class="py-2.5 px-3 text-rose-400">Sucesora iniciada con predecesora abierta</td></tr>`;
   }).join('') : empty(4);
+
   $('negFloatTableBody').innerHTML = a.negFloat.length ? a.negFloat.map(t => `
     <tr class="hover:bg-slate-800/40"><td class="py-2.5 px-3 code-font text-sky-400 font-bold">${esc(t.id)}</td><td class="py-2.5 px-3 text-slate-200">${esc(t.name)}</td><td class="py-2.5 px-3 text-right code-font font-bold text-rose-400">${t.tf.toFixed(1)} d</td><td class="py-2.5 px-3 text-slate-400">${fmtDate(t.finish)}</td></tr>`).join('') : empty(4);
+
   const cstrTasks = a.inc.filter(t => t.cstr);
   $('constraintsTableBody').innerHTML = cstrTasks.length ? cstrTasks.map(t => `
     <tr class="hover:bg-slate-800/40"><td class="py-2.5 px-3 code-font text-sky-400 font-bold">${esc(t.id)}</td><td class="py-2.5 px-3 text-slate-200">${esc(t.name)}</td><td class="py-2.5 px-3 ${HARD_CONSTRAINTS.includes(t.cstr) ? 'text-rose-400' : 'text-amber-400'} font-medium">${CSTR_LABEL[t.cstr]}</td><td class="py-2.5 px-3 code-font text-slate-300">${fmtDate(t.cstrDate)}</td></tr>`).join('') : empty(4);
+
   $('resourcesTableBody').innerHTML = a.noRes.length ? a.noRes.map(t => `
     <tr class="hover:bg-slate-800/40"><td class="py-2.5 px-3 code-font text-sky-400 font-bold">${esc(t.id)}</td><td class="py-2.5 px-3 text-slate-200">${esc(t.name)}</td><td class="py-2.5 px-3 text-rose-400">Actividad pendiente sin recursos asignados</td></tr>`).join('') : empty(3);
 }
+
 /* ==========================================================
    CARGA DE ARCHIVOS
    ========================================================== */
+/* ---------- RESUMEN EJECUTIVO ---------- */
+function renderExec(a) {
+  const sc = scoreColor(a.score);
+  const verdict = a.score >= 80 ? 'El cronograma es confiable para la toma de decisiones gerenciales.'
+    : a.score >= 60 ? 'El cronograma es utilizable, pero requiere correcciones antes de su aprobación.'
+    : 'El cronograma NO es confiable para la toma de decisiones y requiere reprogramación de su lógica.';
+  const top = a.metrics.filter(m => m.passed === false).slice(0, 4);
+  $('execSummary').innerHTML = `
+    <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+      <div>
+        <p class="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Resumen ejecutivo</p>
+        <h3 class="text-lg font-bold text-white mt-1">${esc(a.p.projectName)}</h3>
+        <p class="text-xs text-slate-300 mt-1">${esc(verdict)}</p>
+      </div>
+      <div class="text-right">
+        <p class="text-3xl font-extrabold ${COLORS[sc].text}">${a.score}%</p>
+        <p class="text-[11px] text-slate-400">Cumplimiento DCMA (${a.passedCount}/${a.evaluated})</p>
+      </div>
+    </div>
+    <div>
+      <p class="text-xs font-semibold text-sky-400 mb-2">Prioridades de corrección</p>
+      <ol class="list-decimal list-inside text-xs text-slate-300 space-y-1">
+        ${top.length ? top.map(m => `<li><strong>${esc(m.name)}:</strong> ${esc(m.rec)}</li>`).join('') : '<li>Sin incumplimientos críticos en las métricas evaluadas.</li>'}
+      </ol>
+    </div>`;
+}
+
+/* ---------- CURVA S (desde datos reales del archivo) ---------- */
+function renderSCurve(a) {
+  const svg = $('sCurveSvg');
+  const T = a.T;
+  const N = T.length;
+  const plannedDates = T.map(t => t.bFinish || t.finish).filter(Boolean);
+  const earlyDates = T.map(t => t.finish).filter(Boolean);
+  const actualDates = T.filter(t => t.completed).map(t => t.aFinish || t.finish).filter(Boolean);
+  const all = [...plannedDates, ...earlyDates, ...actualDates];
+  if (!N || !all.length) {
+    svg.innerHTML = '<text x="310" y="130" text-anchor="middle" fill="#94a3b8" font-size="13">Sin fechas suficientes para generar la curva S</text>';
+    $('sCurveSummary').textContent = '';
+    return;
+  }
+  const minD = new Date(Math.min(...all.map(d => d.getTime())));
+  minD.setDate(1); minD.setHours(0,0,0,0);
+  const maxD = new Date(Math.max(...all.map(d => d.getTime())));
+  const months = [];
+  const c = new Date(minD);
+  while (c <= maxD && months.length < 120) { months.push(new Date(c)); c.setMonth(c.getMonth() + 1); }
+  if (months.length < 2) months.push(new Date(c));
+
+  const cumAt = (dates, m) => {
+    const end = new Date(m.getFullYear(), m.getMonth() + 1, 0, 23, 59, 59);
+    return dates.filter(d => d <= end).length / N * 100;
+  };
+  const W = 620, H = 260, L = 46, R = 16, Tp = 14, B = 34;
+  const iw = W - L - R, ih = H - Tp - B;
+  const x = i => L + (months.length === 1 ? 0 : i / (months.length - 1)) * iw;
+  const y = v => Tp + ih - (v / 100) * ih;
+  const ddIdx = months.findIndex(m => m.getFullYear() * 12 + m.getMonth() >= a.dd.getFullYear() * 12 + a.dd.getMonth());
+  const lastIdx = ddIdx === -1 ? months.length - 1 : ddIdx;
+
+  const planned = months.map((m, i) => [x(i), y(cumAt(plannedDates, m))]);
+  const early = months.map((m, i) => [x(i), y(cumAt(earlyDates, m))]);
+  const real = months.slice(0, lastIdx + 1).map((m, i) => [x(i), y(cumAt(actualDates, m))]);
+  const pts = arr => arr.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+
+  let grid = '';
+  [0, 25, 50, 75, 100].forEach(v => {
+    grid += `<line x1="${L}" y1="${y(v)}" x2="${W - R}" y2="${y(v)}" stroke="#334155" stroke-dasharray="3,3"/>`;
+    grid += `<text x="${L - 8}" y="${y(v) + 4}" text-anchor="end" fill="#94a3b8" font-size="10">${v}%</text>`;
+  });
+  const step = Math.max(1, Math.ceil(months.length / 8));
+  let xl = '';
+  months.forEach((m, i) => { if (i % step === 0) xl += `<text x="${x(i)}" y="${H - 12}" text-anchor="middle" fill="#94a3b8" font-size="10">${m.toLocaleDateString('es-CL', { month: 'short', year: '2-digit' })}</text>`; });
+  const ddX = x(Math.max(0, lastIdx));
+
+  svg.innerHTML = `
+    ${grid}${xl}
+    <line x1="${ddX}" y1="${Tp}" x2="${ddX}" y2="${Tp + ih}" stroke="#f43f5e" stroke-dasharray="4,3"/>
+    <text x="${ddX + 4}" y="${Tp + 10}" fill="#f43f5e" font-size="10">Fecha de corte</text>
+    <polyline points="${pts(planned)}" fill="none" stroke="#f59e0b" stroke-width="2.2"/>
+    <polyline points="${pts(early)}" fill="none" stroke="#38bdf8" stroke-width="2.2"/>
+    <polyline points="${pts(real)}" fill="none" stroke="#10b981" stroke-width="2.6"/>`;
+
+  const pl = cumAt(plannedDates, a.dd), ea = cumAt(earlyDates, a.dd), re = cumAt(actualDates, a.dd);
+  const gap = re - pl;
+  $('sCurveSummary').innerHTML = `<strong class="text-sky-400">Al corte (${fmtDate(a.dd)}):</strong> Real ${re.toFixed(1)}% · Línea base ${pl.toFixed(1)}% · Fin temprano ${ea.toFixed(1)}% · Desviación real vs. base <span class="${gap < -5 ? 'text-rose-400' : gap < 0 ? 'text-amber-400' : 'text-emerald-400'} font-semibold">${gap.toFixed(1)} pp</span>.`;
+}
+
 let currentAudit = null;
+
 function handleFile(file) {
   const ext = file.name.split('.').pop().toLowerCase();
   if (ext === 'mpp') {
@@ -644,6 +845,7 @@ function handleFile(file) {
     return;
   }
   showStatus(`Procesando ${file.name}…`, 'info');
+
   const reader = new FileReader();
   reader.onload = e => {
     try {
@@ -660,11 +862,13 @@ function handleFile(file) {
   reader.onerror = () => showStatus('No se pudo leer el archivo.', 'error');
   reader.readAsText(file, 'utf-8');
 }
+
 /* ==========================================================
    INICIALIZACIÓN
    ========================================================== */
 document.addEventListener('DOMContentLoaded', () => {
   if (window.lucide) lucide.createIcons();
+
   const dz = $('dropZone'), fi = $('fileInput');
   dz.addEventListener('click', e => { if (e.target !== fi) fi.click(); });
   dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('border-sky-400', 'bg-sky-500/10'); });
@@ -678,6 +882,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target.files.length) handleFile(e.target.files[0]);
     e.target.value = '';
   });
+
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-btn').forEach(b => {
@@ -690,6 +895,7 @@ document.addEventListener('DOMContentLoaded', () => {
       $(btn.dataset.tab).classList.remove('hidden');
     });
   });
+
   $('printBtn').addEventListener('click', () => {
     if (!currentAudit) return;
     window.print();
