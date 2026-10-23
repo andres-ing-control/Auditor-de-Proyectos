@@ -17,7 +17,7 @@
   ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
   .print-only { display: none; }
 
-  @page { size: A4 landscape; margin: 10mm; }
+  @page { size: A4 portrait; margin: 16mm 14mm; }
   @media print {
     body { background: #fff !important; color: #0f172a !important; }
     .no-print { display: none !important; }
@@ -36,6 +36,29 @@
     thead { display: table-header-group; }
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
+  /* ---------- INFORME DE GERENCIA (solo se muestra al exportar) ---------- */
+  #reportDoc { display: none; font-family: 'Plus Jakarta Sans', Arial, sans-serif; color: #0f172a; background: #fff; }
+  #reportDoc h2 { font-size: 13pt; font-weight: 800; color: #0c4a6e; border-bottom: 2px solid #0284c7; padding-bottom: 4px; margin: 18px 0 8px; page-break-after: avoid; }
+  #reportDoc h3 { font-size: 10.5pt; font-weight: 700; color: #0f172a; margin: 12px 0 4px; page-break-after: avoid; }
+  #reportDoc p, #reportDoc li { font-size: 9.5pt; line-height: 1.5; color: #1e293b; margin: 4px 0; }
+  #reportDoc .cover { min-height: 230mm; display: flex; flex-direction: column; justify-content: center; page-break-after: always; border-left: 6px solid #0284c7; padding-left: 24px; }
+  #reportDoc .rt { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin: 6px 0 10px; }
+  #reportDoc .rt th { background: #e0f2fe; color: #0c4a6e; text-align: left; padding: 5px 6px; border: 1px solid #cbd5e1; }
+  #reportDoc .rt td { padding: 4px 6px; border: 1px solid #cbd5e1; vertical-align: top; color: #1e293b; }
+  #reportDoc .rt tr { break-inside: avoid; }
+  #reportDoc .kpis { display: flex; gap: 8px; margin: 10px 0; }
+  #reportDoc .kpi { flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; }
+  #reportDoc .kpi b { display: block; font-size: 15pt; color: #0c4a6e; }
+  #reportDoc .kpi span { font-size: 8pt; color: #475569; }
+  #reportDoc .box { border: 1px solid #cbd5e1; border-left: 5px solid #0284c7; padding: 10px 12px; border-radius: 6px; margin: 8px 0; }
+  #reportDoc .rn { font-size: 9pt; color: #475569; font-style: italic; }
+  #reportDoc .pb { page-break-before: always; }
+  .st-ok { color: #047857; font-weight: 700; }
+  .st-no { color: #be123c; font-weight: 700; }
+  .st-na { color: #475569; font-weight: 700; }
+  @media print {
+    body > header, body > main, body > footer, body > .print-only { display: none !important; }
+    #reportDoc { display: block !important; }
 </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -315,6 +338,8 @@
     </section>
   </div>
 </main>
+
+<div id="reportDoc"></div>
 
 <footer class="glass-panel border-t border-slate-800/80 py-4 px-6 text-center text-xs text-slate-400 no-print mt-8">
   <p>Auditoría de Cronogramas P6 & MS Project • Desarrollado para <strong>Andrés Pérez Riquelme</strong></p>
@@ -832,6 +857,156 @@ function renderSCurve(a) {
   $('sCurveSummary').innerHTML = `<strong class="text-sky-400">Al corte (${fmtDate(a.dd)}):</strong> Real ${re.toFixed(1)}% · Línea base ${pl.toFixed(1)}% · Fin temprano ${ea.toFixed(1)}% · Desviación real vs. base <span class="${gap < -5 ? 'text-rose-400' : gap < 0 ? 'text-amber-400' : 'text-emerald-400'} font-semibold">${gap.toFixed(1)} pp</span>.`;
 }
 
+/* ==========================================================
+   INFORME DE GERENCIA (redacción de evaluación PMP)
+   ========================================================== */
+function buildReport(a) {
+  const p = a.p, dd = a.dd, T = a.T, N = T.length || 1;
+  const hoy = new Date().toLocaleDateString('es-CL');
+  const pc = (n, d) => d ? (n / d * 100).toFixed(1) : '0.0';
+  const tbl = (heads, rows, vacio) => rows.length
+    ? `<table class="rt"><thead><tr>${heads.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`
+    : `<p class="rn">${vacio}</p>`;
+  const estado = ok => ok === null ? '<span class="st-na">N/E</span>' : ok ? '<span class="st-ok">Cumple</span>' : '<span class="st-no">No cumple</span>';
+  const cpliTxt = a.cpli !== null ? a.cpli.toFixed(2) : 'N/D';
+  const cpliOk = a.cpli !== null && a.cpli >= 0.95;
+  const sc = a.score;
+  const dict = sc >= 80
+    ? { t: 'APROBAR', c: '#047857', d: 'El cronograma tiene la lógica y el control suficientes para sustentar decisiones de gerencia y la fecha de término comprometida.' }
+    : sc >= 60
+      ? { t: 'APROBAR CON CONDICIONES', c: '#b45309', d: 'El cronograma es utilizable como referencia, pero no debe adoptarse como línea de control hasta cerrar las observaciones de prioridad alta de este informe.' }
+      : { t: 'NO APROBAR: REPROGRAMAR', c: '#be123c', d: 'El cronograma no es confiable para la toma de decisiones. Su lógica y sus holguras no representan la ejecución real; se requiere reprogramación antes de usarlo para pronósticos.' };
+  const fails = a.metrics.filter(m => m.passed === false);
+  const failNames = fails.map(m => `#${m.id} ${m.name}`).join('; ');
+  const plannedPct = T.filter(t => t.bFinish && startOfDay(t.bFinish) <= dd).length / N * 100;
+  const earlyPct = T.filter(t => t.finish && startOfDay(t.finish) <= dd).length / N * 100;
+  const realPct = T.filter(t => t.completed).length / N * 100;
+  const gap = realPct - plannedPct;
+  const tend = gap < -10 ? 'una desviación significativa' : gap < -5 ? 'una desviación moderada' : 'una desviación dentro de tolerancia';
+  const hitos = T.filter(t => t.type === 'milestone');
+  const hitosPct = (hitos.length / N * 100).toFixed(1);
+  const ssCount = a.R.filter(r => r.type === 'SS').length;
+  const ffCount = a.R.filter(r => r.type === 'FF').length;
+  const sfCount = a.R.filter(r => r.type === 'SF').length;
+  const critSorted = [...a.critical].sort((x, y) => x.tf - y.tf);
+  const negSorted = [...a.negFloat].sort((x, y) => x.tf - y.tf);
+  const dimRow = (name, ids, impl) => {
+    const ms = a.metrics.filter(m => ids.includes(m.id) && m.passed !== null);
+    const ok = ms.filter(m => m.passed).length;
+    const st = !ms.length ? ['Sin datos', '#475569'] : ok === ms.length ? ['Adecuada', '#047857'] : ok >= ms.length / 2 ? ['Parcial', '#b45309'] : ['Deficiente', '#be123c'];
+    return [esc(name), `<b style="color:${st[1]}">${st[0]}</b> (${ok}/${ms.length})`, esc(impl)];
+  };
+  const plan = fails.map(m => {
+    const alta = [1, 7, 9, 11, 13].includes(m.id);
+    return [alta ? '<b style="color:#be123c">Alta</b>' : '<b style="color:#b45309">Media</b>', esc(`#${m.id} ${m.name}`), esc(m.rec), alta ? 'Planificador y gerente de proyecto' : 'Planificador', alta ? '5 días hábiles' : '10 días hábiles'];
+  });
+  const decisiones = [
+    sc >= 80 ? 'Aprobar el cronograma como línea de control vigente.' : 'No aprobar el cronograma como línea de control hasta su reprogramación.',
+    cpliOk ? 'Mantener el seguimiento mensual de la ruta crítica.' : 'Instruir un plan de recuperación de la ruta crítica, con recursos y fecha comprometida, para presentarlo en el próximo comité.',
+    fails.some(m => m.id === 11) ? 'Decidir si se aplica un plan de aceleración para las tareas atrasadas o si se reprograma la línea base.' : 'Mantener la línea base vigente.',
+    'Solicitar al planificador la reentrega del archivo corregido para una nueva auditoría en un plazo máximo de 10 días hábiles.'
+  ];
+
+  return `
+  <div class="cover">
+    <p style="font-size:9pt;letter-spacing:.12em;text-transform:uppercase;color:#475569">Informe técnico para gerencia</p>
+    <h1 style="font-size:24pt;font-weight:800;color:#0c4a6e;margin:8px 0">Auditoría de calidad del cronograma</h1>
+    <p style="font-size:12pt;color:#334155">Evaluación bajo el estándar DCMA 14 Puntos y las buenas prácticas de planificación del PMI</p>
+    <table class="rt" style="margin-top:28px;width:75%">
+      <tr><td style="width:35%"><b>Proyecto</b></td><td>${esc(p.projectName)}</td></tr>
+      <tr><td><b>Fuente del archivo</b></td><td>${esc(p.source)}</td></tr>
+      <tr><td><b>Fecha de corte</b></td><td>${fmtDate(p.dataDate)}</td></tr>
+      <tr><td><b>Fecha de emisión</b></td><td>${hoy}</td></tr>
+      <tr><td><b>Preparado por</b></td><td>Andrés Pérez Riquelme, Especialista en Control de Proyectos</td></tr>
+      <tr><td><b>Destinatario</b></td><td>Gerencia del proyecto</td></tr>
+      <tr><td><b>Clasificación</b></td><td>Uso interno</td></tr>
+    </table>
+    <p style="margin-top:40px;font-size:8.5pt;color:#64748b">Este documento resume un análisis automatizado del archivo entregado. Las cifras deben validarse con el planificador responsable antes de adoptar decisiones contractuales.</p>
+  </div>
+
+  <h2>1. Dictamen y resumen ejecutivo</h2>
+  <div class="box" style="border-left-color:${dict.c}">
+    <p><strong>Dictamen del evaluador:</strong> <span style="color:${dict.c};font-weight:800">${dict.t}</span></p>
+    <p>${dict.d}</p>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><b>${sc}%</b><span>Cumplimiento DCMA (${a.passedCount}/${a.evaluated})</span></div>
+    <div class="kpi"><b>${fails.length}</b><span>Métricas no cumplidas</span></div>
+    <div class="kpi"><b>${cpliTxt}</b><span>CPLI (meta ≥ 0.95)</span></div>
+    <div class="kpi"><b>${a.bei !== null ? a.bei.toFixed(2) : 'N/D'}</b><span>BEI (meta ≥ 0.95)</span></div>
+  </div>
+  <p>El cronograma cumple ${a.passedCount} de ${a.evaluated} métricas DCMA evaluables, con calidad general ${a.quality.toLowerCase()}. ${fails.length ? `Los incumplimientos se concentran en: ${esc(failNames)}.` : 'No se registran incumplimientos en las métricas evaluadas.'}</p>
+  <p>La pregunta de decisión no es si el archivo está ordenado, sino si su fecha de término y su avance son confiables. ${cpliOk ? 'El índice CPLI cumple la meta, lo que indica que la ruta crítica proyecta un plazo alcanzable.' : `El índice CPLI de ${cpliTxt} indica que la ruta crítica no proyecta un plazo alcanzable con la holgura disponible; la fecha de término debe considerarse en riesgo.`}</p>
+  <p>Respecto del avance, el ${realPct.toFixed(1)}% de las actividades está terminado a la fecha de corte, frente al ${plannedPct.toFixed(1)}% de la línea base, lo que representa ${tend}.</p>
+
+  <h3>Evaluación por dimensión de calidad</h3>
+  ${tbl(['Dimensión', 'Resultado', 'Qué determina'], [
+    dimRow('Integridad de la lógica', [1, 2, 3, 4], 'Si el modelo representa la secuencia real del trabajo.'),
+    dimRow('Realismo de fechas y holgura', [7, 9, 12, 13], 'Si la fecha de término es alcanzable.'),
+    dimRow('Control de avance frente a línea base', [11, 14], 'Si el avance puede medirse frente al plan.'),
+    dimRow('Flexibilidad y restricciones', [5, 6, 8], 'Si el plan puede absorber variaciones sin perder control.'),
+    dimRow('Recursos y costos', [10], 'Si el trabajo pendiente tiene capacidad asignada.')
+  ], 'Sin datos.')}
+
+  <h3>Decisiones requeridas de gerencia</h3>
+  <ol>${decisiones.map(d => `<li>${esc(d)}</li>`).join('')}</ol>
+
+  <h2 class="pb">2. Alcance y metodología</h2>
+  <p>La evaluación se realizó sobre ${T.length} actividades (excluidas las de nivel de esfuerzo del nivel LOE), ${a.inc.length} de ellas incompletas, y ${a.R.length} relaciones lógicas. La fecha de corte es ${fmtDate(p.dataDate)}. Los criterios aplicados siguen la metodología DCMA 14 Puntos y se contrastan con las buenas prácticas de planificación y control de cronograma del PMI.</p>
+  <p>Limitaciones del análisis: la ruta crítica se determina por holgura igual o menor a cero, sin recalcular el método de la ruta crítica completo; el CPLI y el BEI son indicadores aproximados. El calendario utilizado es de ${HOURS_PER_DAY} horas por día; si el proyecto opera con otro calendario, las holguras en días deben reconvertirse antes de su uso contractual.</p>
+
+  <h2>3. Evaluación DCMA 14 Puntos</h2>
+  ${tbl(['#', 'Métrica', 'Resultado', 'Umbral', 'Estado', 'Juicio y acción requerida'], a.metrics.map(m => [m.id, esc(m.name), esc(m.result), esc(m.threshold), estado(m.passed), esc(m.rec)]), 'Sin métricas evaluables.')}
+
+  <h2 class="pb">4. Ruta crítica y pronóstico de término</h2>
+  <p>Se identifican ${a.critical.length} actividades abiertas con holgura igual o menor a cero, agrupadas en ${a.critHeads.length} cadena(s) de inicio. ${a.negFloat.length} de ellas presentan holgura negativa, lo que indica que el cronograma no alcanza la fecha objetivo con la lógica actual. Esto no debe interpretarse solo como atraso de ejecución: en varios casos proviene de restricciones de fecha o de vínculos que obligan a iniciar trabajo antes de que su predecesora termine.</p>
+  <p>Días laborables hasta el fin del proyecto según el archivo: ${a.cpl}. ${cpliOk ? 'La holgura disponible permite sostener el plazo.' : 'La holgura disponible no permite sostener el plazo sin recuperación; cualquier fecha comprometida debe tratarse como en riesgo.'}</p>
+  ${tbl(['Código', 'Actividad', 'Holgura (d)', 'Fin temprano'], critSorted.slice(0, 15).map(t => [esc(t.id), esc(t.name), t.tf.toFixed(1), fmtDate(t.finish)]), 'No hay actividades críticas en el archivo.')}
+
+  <h2>5. Curva S y desempeño al corte</h2>
+  ${tbl(['Indicador al corte', 'Porcentaje'], [
+    ['Línea base (acumulado planificado)', plannedPct.toFixed(1) + '%'],
+    ['Fin temprano (acumulado)', earlyPct.toFixed(1) + '%'],
+    ['Real completado', realPct.toFixed(1) + '%'],
+    ['Desviación real vs. línea base', `<b style="color:${gap < 0 ? '#be123c' : '#047857'}">${gap.toFixed(1)} pp</b>`]
+  ], '')}
+  <p>El avance real presenta ${tend} frente a la línea base. ${gap < -5 ? 'Se recomienda analizar las causas del atraso y presentar un plan de recuperación formal antes de la próxima sesión de comité.' : 'El avance es coherente con el plan y se recomienda mantener el seguimiento actual.'} La curva se calcula por número de actividades; no está ponderada por costo ni por recursos.</p>
+
+  <h2 class="pb">6. Lógica del cronograma</h2>
+  <p>Del total de ${a.R.length} relaciones, ${a.fs.length} son de tipo fin-inicio (${a.fsPct.toFixed(1)}%), ${ssCount} de inicio-inicio, ${ffCount} de fin-fin y ${sfCount} de inicio-fin. ${a.leads.length} tienen adelantos y ${a.lags.length} tienen retrasos. ${a.outOfSeq.length} relaciones tienen una sucesora iniciada con su predecesora aún abierta, lo que compromete la confiabilidad del cálculo de holguras.</p>
+  <h3>Actividades sin predecesora o sucesora</h3>
+  ${tbl(['Código', 'Actividad', 'Inconsistencia'], a.noLogic.map(t => [esc(t.id), esc(t.name), [!a.hasPred.has(t.key) ? 'Sin predecesora' : '', !a.hasSucc.has(t.key) ? 'Sin sucesora' : ''].filter(Boolean).join(' / ')]), 'Sin hallazgos en esta categoría.')}
+  <h3>Relaciones fuera de secuencia (primeras 25)</h3>
+  ${tbl(['Relación (pred. → suc.)', 'Tipo', 'Sucesora'], a.outOfSeq.slice(0, 25).map(r => [esc(a.map.get(r.pred).id) + ' → ' + esc(a.map.get(r.succ).id), r.type, esc(a.map.get(r.succ).name)]), 'Sin relaciones fuera de secuencia.')}
+
+  <h2>7. Holgura negativa</h2>
+  <p>${a.negFloat.length ? `Se registran ${a.negFloat.length} actividades con holgura negativa. Cada una exige decidir entre acelerar, paralelizar o renegociar la restricción que la origina.` : 'No se registran actividades con holgura negativa.'}</p>
+  ${tbl(['Código', 'Actividad', 'Holgura (d)', 'Fin temprano'], negSorted.slice(0, 20).map(t => [esc(t.id), esc(t.name), `<b style="color:#be123c">${t.tf.toFixed(1)}</b>`, fmtDate(t.finish)]), 'Sin hallazgos en esta categoría.')}
+
+  <h2>8. Restricciones</h2>
+  <p>Restricciones duras: ${a.hard.length}. Restricciones flexibles o de fecha: ${a.inc.filter(t => t.cstr && !HARD_CONSTRAINTS.includes(t.cstr)).length}. Las restricciones duras rigidizan el cronograma y deben reemplazarse por lógica siempre que sea posible.</p>
+  ${tbl(['Código', 'Actividad', 'Tipo de restricción', 'Fecha'], a.inc.filter(t => t.cstr).map(t => [esc(t.id), esc(t.name), esc(CSTR_LABEL[t.cstr]), fmtDate(t.cstrDate)]), 'Sin restricciones en actividades incompletas.')}
+
+  <h2>9. Recursos y costos</h2>
+  <p>${a.noRes.length} de ${a.work.length} actividades operativas pendientes no tienen recursos asignados. Una actividad sin recurso no puede ejecutarse ni medirse en costo, por lo que su fecha no debe considerarse comprometida.</p>
+  ${tbl(['Código', 'Actividad', 'Observación'], a.noRes.slice(0, 30).map(t => [esc(t.id), esc(t.name), 'Sin recursos asignados']), 'Todas las actividades pendientes tienen recursos asignados.')}
+
+  <h2>10. Hitos y consistencia de fechas</h2>
+  <p>Los hitos representan el ${hitosPct}% del total de actividades (${hitos.length} de ${N}). ${fails.some(m => m.id === 3) || hitos.length / N > 0.05 ? 'Un porcentaje alto de hitos suele indicar hitos mal conectados o un modelo sobre-resumido; debe revisarse su uso.' : 'El uso de hitos se encuentra dentro del umbral recomendado.'}</p>
+  ${tbl(['Código', 'Actividad', 'Fecha inconsistente'], a.invalid.slice(0, 20).map(t => [esc(t.id), esc(t.name), fmtDate(t.aStart || t.start)]), 'Sin fechas inconsistentes.')}
+
+  <h2 class="pb">11. Plan de acción recomendado</h2>
+  ${tbl(['Prioridad', 'Hallazgo', 'Acción requerida', 'Responsable', 'Plazo sugerido'], plan, 'No hay acciones pendientes: todas las métricas evaluables cumplen.')}
+
+  <h2>12. Conclusión</h2>
+  <p>${dict.d} Las acciones de prioridad alta deben cerrarse antes de la próxima revisión de comité. Esta evaluación debe repetirse tras la reentrega del archivo corregido para confirmar la mejora de las métricas.</p>
+  <div style="margin-top:40px;display:flex;gap:40px">
+    <div style="flex:1;border-top:1px solid #334155;padding-top:6px"><p><strong>Andrés Pérez Riquelme</strong><br>Especialista en Control de Proyectos</p></div>
+    <div style="flex:1;border-top:1px solid #334155;padding-top:6px"><p><strong>Revisado y aprobado por</strong><br>Gerencia del proyecto</p></div>
+  </div>
+  `;
+}
+
 let currentAudit = null;
 
 function handleFile(file) {
@@ -898,6 +1073,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   $('printBtn').addEventListener('click', () => {
     if (!currentAudit) return;
+    $('reportDoc').innerHTML = buildReport(currentAudit);
     window.print();
   });
 });
