@@ -362,7 +362,10 @@ const CSTR_LABEL = {
 };
 
 const $ = id => document.getElementById(id);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const escRaw = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// Web: elimina tildes y ñ de los datos del archivo para que se vean limpios en pantalla
+const sinTilde = s => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const esc = s => escRaw(sinTilde(s));
 const num = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
 const toDate = s => {
   if (!s) return null;
@@ -654,10 +657,10 @@ function render(a) {
   $('printBtn').disabled = false;
   renderExec(a);
   renderSCurve(a);
-  $('printProjectName').textContent = p.projectName;
+  $('printProjectName').textContent = sinTilde(p.projectName);
   $('printDate').textContent = new Date().toLocaleDateString('es-CL');
   $('printDataDate').textContent = fmtDate(p.dataDate);
-  $('coverProject').textContent = p.projectName;
+  $('coverProject').textContent = p.projectName; // el informe conserva tildes
   $('coverSource').textContent = p.source;
   $('coverDataDate').textContent = fmtDate(p.dataDate);
   $('coverDate').textContent = new Date().toLocaleDateString('es-CL');
@@ -681,7 +684,7 @@ function render(a) {
   $('kpiTotalRelations').textContent = a.totalRel;
   $('kpiFsRatio').textContent = `${a.fsPct.toFixed(1)}% tipo FS`;
   $('kpiDataDate').textContent = fmtDate(p.dataDate);
-  $('kpiProjectName').textContent = `Proyecto: ${p.projectName}`;
+  $('kpiProjectName').textContent = sinTilde(`Proyecto: ${p.projectName}`);
   $('kpiCpli').textContent = a.cpli !== null ? a.cpli.toFixed(2) : 'N/D';
   setTextColor($('kpiCpli'), a.cpli !== null && a.cpli >= 0.95 ? 'emerald' : 'rose');
 
@@ -760,7 +763,7 @@ function render(a) {
 
   const cstrTasks = a.inc.filter(t => t.cstr);
   $('constraintsTableBody').innerHTML = cstrTasks.length ? cstrTasks.map(t => `
-    <tr class="hover:bg-slate-800/40"><td class="py-2.5 px-3 code-font text-sky-400 font-bold">${esc(t.id)}</td><td class="py-2.5 px-3 text-slate-200">${esc(t.name)}</td><td class="py-2.5 px-3 ${HARD_CONSTRAINTS.includes(t.cstr) ? 'text-rose-400' : 'text-amber-400'} font-medium">${CSTR_LABEL[t.cstr]}</td><td class="py-2.5 px-3 code-font text-slate-300">${fmtDate(t.cstrDate)}</td></tr>`).join('') : empty(4);
+    <tr class="hover:bg-slate-800/40"><td class="py-2.5 px-3 code-font text-sky-400 font-bold">${esc(t.id)}</td><td class="py-2.5 px-3 text-slate-200">${esc(t.name)}</td><td class="py-2.5 px-3 ${HARD_CONSTRAINTS.includes(t.cstr) ? 'text-rose-400' : 'text-amber-400'} font-medium">${esc(CSTR_LABEL[t.cstr])}</td><td class="py-2.5 px-3 code-font text-slate-300">${fmtDate(t.cstrDate)}</td></tr>`).join('') : empty(4);
 
   $('resourcesTableBody').innerHTML = a.noRes.length ? a.noRes.map(t => `
     <tr class="hover:bg-slate-800/40"><td class="py-2.5 px-3 code-font text-sky-400 font-bold">${esc(t.id)}</td><td class="py-2.5 px-3 text-slate-200">${esc(t.name)}</td><td class="py-2.5 px-3 text-rose-400">Actividad pendiente sin recursos asignados</td></tr>`).join('') : empty(3);
@@ -861,6 +864,7 @@ function renderSCurve(a) {
    INFORME DE GERENCIA (redacción de evaluación PMP)
    ========================================================== */
 function buildReport(a) {
+  const esc = escRaw; // Informe: conserva tildes y ñ
   const p = a.p, dd = a.dd, T = a.T, N = T.length || 1;
   const hoy = new Date().toLocaleDateString('es-CL');
   const pc = (n, d) => d ? (n / d * 100).toFixed(1) : '0.0';
@@ -1007,6 +1011,12 @@ function buildReport(a) {
   `;
 }
 
+// Decodifica el archivo: UTF-8 si es válido; si no, Windows-1252 (habitual en exportaciones de P6)
+function decodeText(buf) {
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(buf); }
+  catch (e) { return new TextDecoder('windows-1252').decode(buf); }
+}
+
 let currentAudit = null;
 
 function handleFile(file) {
@@ -1024,7 +1034,8 @@ function handleFile(file) {
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      const proj = ext === 'xer' ? parseXER(e.target.result) : parseMSPXML(e.target.result);
+      const txt = decodeText(e.target.result);
+      const proj = ext === 'xer' ? parseXER(txt) : parseMSPXML(txt);
       if (!proj.tasks.length) throw new Error('No se encontraron actividades en el archivo.');
       currentAudit = analyze(proj);
       render(currentAudit);
@@ -1035,7 +1046,7 @@ function handleFile(file) {
     }
   };
   reader.onerror = () => showStatus('No se pudo leer el archivo.', 'error');
-  reader.readAsText(file, 'utf-8');
+  reader.readAsArrayBuffer(file);
 }
 
 /* ==========================================================
